@@ -486,6 +486,24 @@
       font-size: 16px;
       font-family: inherit;
     }
+
+    .send-button {
+      background: linear-gradient(135deg, #5865f2, #7289da);
+      border: none;
+      color: #fff;
+      padding: 8px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.08s ease, opacity 0.12s ease;
+      margin-left: 8px;
+      flex-shrink: 0;
+    }
+    .send-button:active { transform: translateY(1px); }
+    .send-button:disabled { opacity: 0.5; cursor: default; }
     .input-wrapper input::placeholder {
       color: #6d6f78;
     }
@@ -502,26 +520,6 @@
     }
     .input-icon:hover {
       color: #dbdee1;
-    }
-    .send-btn {
-      background-color: #5865f2;
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      padding: 8px 16px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 600;
-      transition: background 0.15s;
-      flex-shrink: 0;
-    }
-    .send-btn:hover {
-      background-color: #4752c4;
-    }
-    .send-btn:disabled {
-      background-color: #4e5058;
-      cursor: not-allowed;
-      opacity: 0.5;
     }
     ::-webkit-scrollbar {
       width: 16px;
@@ -540,76 +538,66 @@
     .main-content ::-webkit-scrollbar-thumb {
       border-color: #313338;
     }
-
-    .mobile-menu-btn {
-      display: none;
-      width: 32px;
-      height: 32px;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      color: #b5bac1;
-      font-size: 24px;
-      margin-right: 8px;
-    }
-
-    /* スマホ対応 */
-    @media (max-width: 768px) {
-      .server-list {
-        position: fixed;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        z-index: 100;
-        transform: translateX(-100%);
-        transition: transform 0.3s ease;
+    /* Mobile responsive adjustments */
+    @media (max-width: 700px) {
+      .app {
+        flex-direction: column;
+        height: 100%;
       }
-      .server-list.show {
-        transform: translateX(0);
+      .server-list {
+        display: none;
       }
       .sidebar {
-        position: fixed;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        z-index: 90;
-        transform: translateX(-100%);
-        transition: transform 0.3s ease;
-      }
-      .sidebar.show {
-        transform: translateX(0);
+        display: none;
       }
       .main-content {
-        width: 100%;
-        margin-left: 0;
+        flex: 1 1 auto;
+        min-height: 100vh;
       }
-      .mobile-menu-btn {
-        display: flex !important;
+      .chat-header {
+        padding: 0 12px;
       }
-      .chat-header-topic {
-        display: none;
+      .messages-container {
+        padding: 12px;
+        padding-bottom: 140px; /* space for fixed input */
       }
-      .chat-header-divider {
-        display: none;
+      .message-group {
+        padding: 8px 12px 8px 56px;
       }
-      .mobile-overlay {
-        display: none;
+      .message-avatar {
+        left: 8px;
+        top: 8px;
+        width: 36px;
+        height: 36px;
+      }
+      .user-avatar {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+      }
+      .input-container {
+        padding: 8px 8px 12px 8px;
         position: fixed;
-        top: 0;
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(0, 0, 0, 0.7);
-        z-index: 80;
+        background: linear-gradient(180deg, rgba(49,51,56,0.0), rgba(49,51,56,1));
+        z-index: 40;
       }
-      .mobile-overlay.show {
-        display: block;
+      .input-wrapper {
+        margin: 0 12px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        align-items: center;
+        gap: 8px;
+      }
+      body {
+        overflow: auto;
       }
     }
   </style>
 </head>
 <body>
-  <div class="mobile-overlay" id="mobileOverlay"></div>
   <div class="app">
     <div class="server-list">
       <div class="server-icon home-icon active">
@@ -687,7 +675,6 @@
 
     <div class="main-content">
       <div class="chat-header">
-        <div class="mobile-menu-btn" id="mobileMenuBtn">☰</div>
         <span class="chat-header-icon">#</span>
         <span class="chat-header-name">一般</span>
         <span class="chat-header-divider"></span>
@@ -727,10 +714,10 @@
           <div class="input-wrapper">
             <div class="input-plus">+</div>
             <input id="input" type="text" placeholder="#一般 にメッセージを送信" autocomplete="off" />
+              <button id="sendButton" type="submit" class="send-button" aria-label="送信">✈</button>
             <div class="input-icons">
               <span class="input-icon">😊</span>
             </div>
-            <button type="submit" class="send-btn" id="sendBtn" disabled>送信</button>
           </div>
         </form>
       </div>
@@ -745,7 +732,7 @@
     const messagesContainer = document.getElementById("messages");
     const typingIndicator = document.getElementById("typingIndicator");
     const typingText = document.getElementById("typingText");
-    const sendBtn = document.getElementById("sendBtn");
+    const sendButton = document.getElementById("sendButton");
 
     const userColors = {};
     const usernames = ["太郎", "花子", "さくら", "たけし", "ゆき", "けん", "あい", "りょう"];
@@ -846,6 +833,13 @@
       return messageDiv;
     }
 
+    // addMessageToUI を追加（共通処理）
+    function addMessageToUI(msg) {
+      const messageElement = createMessage(msg.username, msg.text, msg.timestamp);
+      messagesContainer.appendChild(messageElement);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       if (input.value.trim()) {
@@ -853,16 +847,20 @@
         const timestamp = Date.now();
         socket.emit("chatMessage", { username, text: input.value, timestamp });
         input.value = "";
-        sendBtn.disabled = true; // 送信後にボタンを無効化
         socket.emit("stopTyping", username);
       }
     });
 
+    // sendButton の有効/無効制御
+    function updateSendButtonState() {
+      if (!sendButton) return;
+      sendButton.disabled = !input.value.trim();
+    }
+    updateSendButtonState();
+    input.addEventListener('input', updateSendButtonState);
+
     let isTyping = false;
     input.addEventListener("input", () => {
-      // 送信ボタンの有効/無効を切り替え
-      sendBtn.disabled = !input.value.trim();
-      
       if (!isTyping) {
         isTyping = true;
         socket.emit("typing", getUsername());
@@ -874,10 +872,8 @@
       }, 1000);
     });
 
-    socket.on("chatMessage", (data) => {
-      const messageElement = createMessage(data.username, data.text, data.timestamp);
-      messagesContainer.appendChild(messageElement);
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    socket.on("chatMessage", (msg) => {
+      addMessageToUI(msg);
     });
 
     socket.on("typing", (username) => {
@@ -893,6 +889,12 @@
       }
     });
 
+    socket.on("chatHistory", (history) => {
+      history.forEach((msg) => {
+        addMessageToUI(msg);
+      });
+    });
+
     // ユーザー情報の更新
     const userAvatar = document.querySelector(".user-avatar");
     const userName = document.querySelector(".user-name");
@@ -900,24 +902,6 @@
     userName.textContent = currentUser;
     userAvatar.textContent = currentUser.charAt(0).toUpperCase();
     userAvatar.style.background = getUserColor(currentUser);
-
-    // モバイルメニュー
-    const mobileMenuBtn = document.getElementById("mobileMenuBtn");
-    const mobileOverlay = document.getElementById("mobileOverlay");
-    const sidebar = document.querySelector(".sidebar");
-    const serverList = document.querySelector(".server-list");
-
-    mobileMenuBtn.addEventListener("click", () => {
-      sidebar.classList.toggle("show");
-      serverList.classList.toggle("show");
-      mobileOverlay.classList.toggle("show");
-    });
-
-    mobileOverlay.addEventListener("click", () => {
-      sidebar.classList.remove("show");
-      serverList.classList.remove("show");
-      mobileOverlay.classList.remove("show");
-    });
   </script>
 </body>
 </html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Simple Chat</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 20px; }
+      #messages { list-style: none; padding: 0; }
+      #messages li { padding: 6px 8px; border-bottom: 1px solid #eee; }
+      form { display: flex; gap: 8px; margin-top: 12px; }
+      input { flex: 1; padding: 8px; }
+      button { padding: 8px 12px; }
+    </style>
+  </head>
+  <body>
+    <h2>Simple Chat</h2>
+
+    <ul id="messages"></ul>
+
+    <form id="form">
+      <input id="input" autocomplete="off" placeholder="メッセージを入力..." />
+      <button>送信</button>
+    </form>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io();
+      const form = document.getElementById("form");
+      const input = document.getElementById("input");
+      const messages = document.getElementById("messages");
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const value = input.value.trim();
+        if (value) {
+          socket.emit("chatMessage", value);
+          input.value = "";
+        }
+      });
+
+      socket.on("chatMessage", (msg) => {
+        const li = document.createElement("li");
+        li.textContent = msg;
+        messages.appendChild(li);
+        window.scrollTo(0, document.body.scrollHeight);
+      });
+    </script>
+  </body>
+</html>

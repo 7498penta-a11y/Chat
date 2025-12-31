@@ -503,6 +503,26 @@
     .input-icon:hover {
       color: #dbdee1;
     }
+    .send-btn {
+      background-color: #5865f2;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+    .send-btn:hover {
+      background-color: #4752c4;
+    }
+    .send-btn:disabled {
+      background-color: #4e5058;
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
     ::-webkit-scrollbar {
       width: 16px;
     }
@@ -520,9 +540,76 @@
     .main-content ::-webkit-scrollbar-thumb {
       border-color: #313338;
     }
+
+    .mobile-menu-btn {
+      display: none;
+      width: 32px;
+      height: 32px;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #b5bac1;
+      font-size: 24px;
+      margin-right: 8px;
+    }
+
+    /* スマホ対応 */
+    @media (max-width: 768px) {
+      .server-list {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 100;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+      }
+      .server-list.show {
+        transform: translateX(0);
+      }
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 90;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+      }
+      .sidebar.show {
+        transform: translateX(0);
+      }
+      .main-content {
+        width: 100%;
+        margin-left: 0;
+      }
+      .mobile-menu-btn {
+        display: flex !important;
+      }
+      .chat-header-topic {
+        display: none;
+      }
+      .chat-header-divider {
+        display: none;
+      }
+      .mobile-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 80;
+      }
+      .mobile-overlay.show {
+        display: block;
+      }
+    }
   </style>
 </head>
 <body>
+  <div class="mobile-overlay" id="mobileOverlay"></div>
   <div class="app">
     <div class="server-list">
       <div class="server-icon home-icon active">
@@ -600,6 +687,7 @@
 
     <div class="main-content">
       <div class="chat-header">
+        <div class="mobile-menu-btn" id="mobileMenuBtn">☰</div>
         <span class="chat-header-icon">#</span>
         <span class="chat-header-name">一般</span>
         <span class="chat-header-divider"></span>
@@ -642,6 +730,7 @@
             <div class="input-icons">
               <span class="input-icon">😊</span>
             </div>
+            <button type="submit" class="send-btn" id="sendBtn" disabled>送信</button>
           </div>
         </form>
       </div>
@@ -656,6 +745,7 @@
     const messagesContainer = document.getElementById("messages");
     const typingIndicator = document.getElementById("typingIndicator");
     const typingText = document.getElementById("typingText");
+    const sendBtn = document.getElementById("sendBtn");
 
     const userColors = {};
     const usernames = ["太郎", "花子", "さくら", "たけし", "ゆき", "けん", "あい", "りょう"];
@@ -763,12 +853,16 @@
         const timestamp = Date.now();
         socket.emit("chatMessage", { username, text: input.value, timestamp });
         input.value = "";
+        sendBtn.disabled = true; // 送信後にボタンを無効化
         socket.emit("stopTyping", username);
       }
     });
 
     let isTyping = false;
     input.addEventListener("input", () => {
+      // 送信ボタンの有効/無効を切り替え
+      sendBtn.disabled = !input.value.trim();
+      
       if (!isTyping) {
         isTyping = true;
         socket.emit("typing", getUsername());
@@ -806,6 +900,24 @@
     userName.textContent = currentUser;
     userAvatar.textContent = currentUser.charAt(0).toUpperCase();
     userAvatar.style.background = getUserColor(currentUser);
+
+    // モバイルメニュー
+    const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+    const mobileOverlay = document.getElementById("mobileOverlay");
+    const sidebar = document.querySelector(".sidebar");
+    const serverList = document.querySelector(".server-list");
+
+    mobileMenuBtn.addEventListener("click", () => {
+      sidebar.classList.toggle("show");
+      serverList.classList.toggle("show");
+      mobileOverlay.classList.toggle("show");
+    });
+
+    mobileOverlay.addEventListener("click", () => {
+      sidebar.classList.remove("show");
+      serverList.classList.remove("show");
+      mobileOverlay.classList.remove("show");
+    });
   </script>
 </body>
 </html>

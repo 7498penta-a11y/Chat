@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Discord</title>
+  <title>Discord連携チャット</title>
   <style>
+    /* 基本スタイルは維持しつつ、必要なクラスを追加 */
     * {
       margin: 0;
       padding: 0;
@@ -21,6 +22,7 @@
       display: flex;
       height: 100vh;
     }
+    /* --- サイドバーなどは変更なし --- */
     .server-list {
       width: 72px;
       background-color: #1e1f22;
@@ -392,7 +394,7 @@
     }
     .message-header {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       margin-bottom: 2px;
       gap: 8px;
     }
@@ -404,6 +406,26 @@
     }
     .message-username:hover {
       text-decoration: underline;
+    }
+    /* ★ Discordタグ用のスタイル ★ */
+    .discord-tag {
+      background-color: #5865F2;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1px 4px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      height: 15px;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .discord-tag svg {
+      width: 10px;
+      height: 10px;
+      margin-right: 2px;
+      fill: white;
     }
     .message-timestamp {
       font-size: 12px;
@@ -486,7 +508,6 @@
       font-size: 16px;
       font-family: inherit;
     }
-
     .send-button {
       background: linear-gradient(135deg, #5865f2, #7289da);
       border: none;
@@ -538,16 +559,13 @@
     .main-content ::-webkit-scrollbar-thumb {
       border-color: #313338;
     }
-    /* Mobile responsive adjustments */
+    /* Mobile responsive */
     @media (max-width: 700px) {
       .app {
         flex-direction: column;
         height: 100%;
       }
-      .server-list {
-        display: none;
-      }
-      .sidebar {
+      .server-list, .sidebar {
         display: none;
       }
       .main-content {
@@ -559,7 +577,7 @@
       }
       .messages-container {
         padding: 12px;
-        padding-bottom: 140px; /* space for fixed input */
+        padding-bottom: 140px; 
       }
       .message-group {
         padding: 8px 12px 8px 56px;
@@ -569,11 +587,6 @@
         top: 8px;
         width: 36px;
         height: 36px;
-      }
-      .user-avatar {
-        width: 28px;
-        height: 28px;
-        font-size: 12px;
       }
       .input-container {
         padding: 8px 8px 12px 8px;
@@ -588,7 +601,6 @@
         margin: 0 12px;
         padding: 10px 12px;
         border-radius: 12px;
-        align-items: center;
         gap: 8px;
       }
       body {
@@ -604,66 +616,32 @@
         <svg viewBox="0 0 24 24"><path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/></svg>
       </div>
       <div class="server-separator"></div>
-      <div class="server-icon">サ</div>
-      <div class="server-icon">テ</div>
-      <div class="server-icon">開</div>
+      <div class="server-icon">D</div>
       <div class="server-icon add-server">+</div>
     </div>
 
     <div class="sidebar">
       <div class="server-header">
-        <span>私のサーバー</span>
+        <span>Discord連携鯖</span>
         <span class="dropdown-icon">▼</span>
       </div>
       <div class="channels-wrapper">
         <div class="channel-category">
-          <div class="category-name">
-            <span class="category-arrow">▼</span>
-            テキストチャンネル
-          </div>
+          <div class="category-name"><span class="category-arrow">▼</span>テキストチャンネル</div>
           <span class="category-plus">+</span>
         </div>
         <div class="channel active">
-          <span class="channel-icon">#</span>
-          <span>一般</span>
+          <span class="channel-icon">#</span><span>連携テスト</span>
         </div>
         <div class="channel">
-          <span class="channel-icon">#</span>
-          <span>雑談</span>
-        </div>
-        <div class="channel">
-          <span class="channel-icon">#</span>
-          <span>お知らせ</span>
-        </div>
-        <div class="channel">
-          <span class="channel-icon">#</span>
-          <span>質問</span>
-        </div>
-
-        <div class="channel-category">
-          <div class="category-name">
-            <span class="category-arrow">▼</span>
-            ボイスチャンネル
-          </div>
-          <span class="category-plus">+</span>
-        </div>
-        <div class="channel">
-          <span class="channel-icon">🔊</span>
-          <span>General</span>
-        </div>
-        <div class="channel">
-          <span class="channel-icon">🔊</span>
-          <span>Gaming</span>
+          <span class="channel-icon">#</span><span>雑談</span>
         </div>
       </div>
       <div class="user-area">
         <div class="user-avatar">U</div>
         <div class="user-info">
           <div class="user-name">ユーザー</div>
-          <div class="user-status">
-            <span class="status-indicator"></span>
-            オンライン
-          </div>
+          <div class="user-status"><span class="status-indicator"></span>オンライン</div>
         </div>
         <div class="user-controls">
           <div class="user-control-btn">🎤</div>
@@ -676,29 +654,23 @@
     <div class="main-content">
       <div class="chat-header">
         <span class="chat-header-icon">#</span>
-        <span class="chat-header-name">一般</span>
+        <span class="chat-header-name">連携テスト</span>
         <span class="chat-header-divider"></span>
-        <span class="chat-header-topic">みんなで楽しく会話しましょう！</span>
+        <span class="chat-header-topic">Discordとブラウザがつながっています</span>
         <div class="chat-header-icons">
           <span class="header-icon-btn">🔔</span>
           <span class="header-icon-btn">📌</span>
           <span class="header-icon-btn">👥</span>
-          <span class="header-icon-btn">🔍</span>
         </div>
       </div>
       
       <div class="messages-container" id="messages">
         <div class="welcome-message">
           <div class="welcome-icon">#</div>
-          <div class="welcome-title">#一般へようこそ！</div>
-          <div class="welcome-text">これは #一般 チャンネルの始まりです。</div>
+          <div class="welcome-title">#連携テストへようこそ！</div>
+          <div class="welcome-text">Discordとリアルタイム通信中。</div>
         </div>
-        <div class="message-divider">
-          <div class="divider-line"></div>
-          <span class="divider-date">2026年1月1日</span>
-          <div class="divider-line"></div>
         </div>
-      </div>
 
       <div class="typing-indicator" id="typingIndicator">
         <div class="typing-dots">
@@ -713,8 +685,8 @@
         <form id="form">
           <div class="input-wrapper">
             <div class="input-plus">+</div>
-            <input id="input" type="text" placeholder="#一般 にメッセージを送信" autocomplete="off" />
-              <button id="sendButton" type="submit" class="send-button" aria-label="送信">✈</button>
+            <input id="input" type="text" placeholder="#連携テスト にメッセージを送信" autocomplete="off" />
+            <button id="sendButton" type="submit" class="send-button" aria-label="送信">✈</button>
             <div class="input-icons">
               <span class="input-icon">😊</span>
             </div>
@@ -734,12 +706,14 @@
     const typingText = document.getElementById("typingText");
     const sendButton = document.getElementById("sendButton");
 
+    // ユーザー状態
     const userColors = {};
-    const usernames = ["太郎", "花子", "さくら", "たけし", "ゆき", "けん", "あい", "りょう"];
+    const usernames = ["WebUser_A", "WebUser_B", "WebUser_C"];
     let typingTimeout;
     let lastMessageUser = null;
     let lastMessageTime = null;
 
+    // ヘルパー関数: ランダムカラー
     function getRandomColor() {
       const colors = [
         "linear-gradient(135deg, #5865f2, #8b9bff)",
@@ -747,56 +721,69 @@
         "linear-gradient(135deg, #faa61a, #ffc658)",
         "linear-gradient(135deg, #ed4245, #f57c7c)",
         "linear-gradient(135deg, #eb459e, #f57dc8)",
-        "linear-gradient(135deg, #00b0f4, #42c5f5)",
-        "linear-gradient(135deg, #9c84ef, #b9a6f5)"
+        "linear-gradient(135deg, #00b0f4, #42c5f5)"
       ];
       return colors[Math.floor(Math.random() * colors.length)];
     }
 
+    // ユーザー名取得 (初回はランダム生成)
     function getUsername() {
       if (!localStorage.getItem("username")) {
-        localStorage.setItem("username", usernames[Math.floor(Math.random() * usernames.length)]);
+        const randomName = usernames[Math.floor(Math.random() * usernames.length)] + Math.floor(Math.random() * 100);
+        localStorage.setItem("username", randomName);
       }
       return localStorage.getItem("username");
     }
 
-    function getUserColor(username) {
+    // ユーザーごとの色を決定 (Discordの場合は固定色)
+    function getUserColor(username, isDiscord) {
+      if (isDiscord) return "#5865F2"; // Discordブランドカラー
       if (!userColors[username]) {
         userColors[username] = getRandomColor();
       }
       return userColors[username];
     }
 
-    function formatTime(date = new Date()) {
+    // 時刻フォーマット
+    function formatTime(timestamp) {
+      const date = new Date(timestamp);
       const hours = String(date.getHours()).padStart(2, '0');
       const minutes = String(date.getMinutes()).padStart(2, '0');
       return `${hours}:${minutes}`;
     }
 
-    function shouldGroupMessages(username, timestamp) {
-      if (!lastMessageUser || !lastMessageTime) return false;
-      if (lastMessageUser !== username) return false;
+    // メッセージ生成
+    function createMessage(msg) {
+      const { username, text, timestamp, isDiscord } = msg;
       
-      const timeDiff = timestamp - lastMessageTime;
-      return timeDiff < 300000; // 5分以内
-    }
+      // 直近のメッセージと同じ人ならグループ化（アバター省略）
+      // ただし時間が空きすぎていたら分ける
+      let isGrouped = false;
+      if (lastMessageUser === username) {
+        if (timestamp - lastMessageTime < 300000) { // 5分以内
+          isGrouped = true;
+        }
+      }
 
-    function createMessage(username, text, timestamp) {
-      const isGrouped = shouldGroupMessages(username, timestamp);
-      
       const messageDiv = document.createElement("div");
       messageDiv.className = isGrouped ? "message-group compact" : "message-group";
 
       if (!isGrouped) {
+        // アバター作成
         const avatar = document.createElement("div");
         avatar.className = "message-avatar";
-        avatar.style.background = getUserColor(username);
+        avatar.style.background = getUserColor(username, isDiscord);
         avatar.textContent = username.charAt(0).toUpperCase();
+        if (isDiscord) {
+             // Discordアイコンにする場合（簡易的に 'D'）
+             avatar.textContent = "D"; 
+        }
         messageDiv.appendChild(avatar);
       } else {
+        // グループ化時のホバー時間表示
         const hoverTime = document.createElement("div");
         hoverTime.className = "message-timestamp-hover";
-        hoverTime.textContent = formatTime(new Date(timestamp));
+        hoverTime.textContent = formatTime(timestamp);
         messageDiv.appendChild(hoverTime);
       }
 
@@ -810,13 +797,21 @@
         const usernameSpan = document.createElement("span");
         usernameSpan.className = "message-username";
         usernameSpan.textContent = username;
+        headerDiv.appendChild(usernameSpan);
+
+        // ★ Discordタグを追加
+        if (isDiscord) {
+          const botTag = document.createElement("span");
+          botTag.className = "discord-tag";
+          botTag.innerHTML = `Discord`;
+          headerDiv.appendChild(botTag);
+        }
 
         const timeSpan = document.createElement("span");
         timeSpan.className = "message-timestamp";
-        timeSpan.textContent = formatTime(new Date(timestamp));
-
-        headerDiv.appendChild(usernameSpan);
+        timeSpan.textContent = formatTime(timestamp);
         headerDiv.appendChild(timeSpan);
+
         contentDiv.appendChild(headerDiv);
       }
 
@@ -833,32 +828,37 @@
       return messageDiv;
     }
 
-    // addMessageToUI を追加（共通処理）
+    // UIへの追加処理
     function addMessageToUI(msg) {
-      const messageElement = createMessage(msg.username, msg.text, msg.timestamp);
-      messagesContainer.appendChild(messageElement);
+      const element = createMessage(msg);
+      messagesContainer.appendChild(element);
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
+    // 送信処理
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       if (input.value.trim()) {
         const username = getUsername();
         const timestamp = Date.now();
+        
+        // サーバーへ送信 (Webからの発言なので isDiscord は送らなくてOK)
         socket.emit("chatMessage", { username, text: input.value, timestamp });
+        
         input.value = "";
         socket.emit("stopTyping", username);
+        updateSendButtonState();
       }
     });
 
-    // sendButton の有効/無効制御
+    // ボタンの有効化制御
     function updateSendButtonState() {
-      if (!sendButton) return;
       sendButton.disabled = !input.value.trim();
     }
-    updateSendButtonState();
     input.addEventListener('input', updateSendButtonState);
+    updateSendButtonState();
 
+    // タイピング通知
     let isTyping = false;
     input.addEventListener("input", () => {
       if (!isTyping) {
@@ -872,36 +872,52 @@
       }, 1000);
     });
 
+    // --- Socket イベント受信 ---
+
+    // メッセージ受信
     socket.on("chatMessage", (msg) => {
       addMessageToUI(msg);
     });
 
-    socket.on("typing", (username) => {
-      if (username !== getUsername()) {
-        typingText.textContent = `${username} が入力中...`;
-        typingIndicator.classList.add("show");
-      }
-    });
-
-    socket.on("stopTyping", (username) => {
-      if (username !== getUsername()) {
-        typingIndicator.classList.remove("show");
-      }
-    });
-
+    // 履歴受信
     socket.on("chatHistory", (history) => {
+      // 履歴受信時は一旦リセット等はせず、純粋に追加していく簡易実装
+      // 重複防止などを入れたい場合はID管理が必要ですが今回は省略
+      messagesContainer.innerHTML = ''; // 一旦クリア（welcomeメッセージも消えるので注意）
+      
+      // Welcomeメッセージ再描画
+      const welcome = document.createElement('div');
+      welcome.className = "welcome-message";
+      welcome.innerHTML = `
+          <div class="welcome-icon">#</div>
+          <div class="welcome-title">#連携テストへようこそ！</div>
+          <div class="welcome-text">履歴を読み込みました。</div>
+      `;
+      messagesContainer.appendChild(welcome);
+
       history.forEach((msg) => {
         addMessageToUI(msg);
       });
     });
 
-    // ユーザー情報の更新
+    // タイピング表示 (Webユーザー同士のみ機能)
+    socket.on("typing", (username) => {
+      typingText.textContent = `${username} が入力中...`;
+      typingIndicator.classList.add("show");
+    });
+
+    socket.on("stopTyping", () => {
+      typingIndicator.classList.remove("show");
+    });
+
+    // 左下ユーザー情報の初期化
     const userAvatar = document.querySelector(".user-avatar");
-    const userName = document.querySelector(".user-name");
-    const currentUser = getUsername();
-    userName.textContent = currentUser;
-    userAvatar.textContent = currentUser.charAt(0).toUpperCase();
-    userAvatar.style.background = getUserColor(currentUser);
+    const userNameDisplay = document.querySelector(".user-name");
+    const myName = getUsername();
+    userNameDisplay.textContent = myName;
+    userAvatar.textContent = myName.charAt(0).toUpperCase();
+    userAvatar.style.background = getUserColor(myName, false);
+
   </script>
 </body>
 </html>

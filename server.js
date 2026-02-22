@@ -10,6 +10,7 @@ const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
 const { MongoClient } = require('mongodb');
+const { Client, GatewayIntentBits } = require('discord.js');
 
 const app = express();
 const server = http.createServer(app);
@@ -22,50 +23,31 @@ const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-change-in-product
 const MONGO_URI  = process.env.MONGO_URI  || '';
 const DB_NAME    = process.env.DB_NAME    || 'chatapp';
 
-// ── Discord Webhook ───────────────────────────────────────────────
-const CHANNEL_IDS = ['general', 'random', 'media', 'dev'];
+// ── チャンネル定義 ─────────────────────────────────────────────────
+// アプリのチャンネルID → Discord チャンネルID のマッピング
+// 環境変数: DISCORD_CHANNEL_ID_general=1234567890
+const APP_CHANNELS = ['general', 'random', 'media', 'dev'];
 
+function getDiscordChannelId(appChannelId) {
+  return process.env[`DISCORD_CHANNEL_ID_${appChannelId}`] || null;
+}
+
+// Discord チャンネルID → アプリチャンネルID の逆引きマップ
+// Bot起動時に構築する
+const discordToApp = {}; // { '1234567890': 'general', ... }
+
+// ── Discord Webhook (サイト→Discord 送信用) ────────────────────────
 function getDiscordWebhook(channelId) {
   return process.env[`DISCORD_WEBHOOK_${channelId}`]
       || process.env.DISCORD_WEBHOOK_DEFAULT
       || null;
 }
 
-function checkDiscordConfig() {
-  console.log('── Discord Webhook 設定確認 ──────────────────');
-  let anySet = false;
-  CHANNEL_IDS.forEach(ch => {
-    const url = process.env[`DISCORD_WEBHOOK_${ch}`];
-    if (url) {
-      console.log(`  ✅ #${ch}: ${url.substring(0, 50)}...`);
-      anySet = true;
-    } else {
-      console.log(`  ❌ #${ch}: 未設定 (DISCORD_WEBHOOK_${ch})`);
-    }
-  });
-  const def = process.env.DISCORD_WEBHOOK_DEFAULT;
-  if (def) {
-    console.log(`  ✅ DEFAULT: ${def.substring(0, 50)}...`);
-    anySet = true;
-  }
-  if (!anySet) {
-    console.warn('  ⚠️  Discord Webhook が1つも設定されていません。');
-    console.warn('     Render Environment Variables に DISCORD_WEBHOOK_general などを追加してください。');
-  }
-  console.log('─────────────────────────────────────────────');
-}
-
 async function sendToDiscord(channelId, username, content, fileInfo = null) {
   const webhookUrl = getDiscordWebhook(channelId);
-  if (!webhookUrl) {
-    console.log(`[Discord] #${channelId}: Webhook未設定のためスキップ`);
-    return;
-  }
+  if (!webhookUrl) return;
 
-  // SVGはDiscordが受け付けないためavatar_urlは省略
-  const body = {
-    username: `${username} (web#${channelId})`,
-  };
+  const body = { username: `${username} (web#${channelId})` };
 
   if (fileInfo) {
     body.embeds = [{
@@ -79,7 +61,7 @@ async function sendToDiscord(channelId, username, content, fileInfo = null) {
     body.content = content;
   }
 
-  console.log(`[Discord] #${channelId} へ送信中... (user: ${username})`);
+  console.log(`[Webhook→Discord] #${channelId} "${username}": ${content || fileInfo?.filename}`);
 
   try {
     const res = await fetch(webhookUrl, {
@@ -87,18 +69,99 @@ async function sendToDiscord(channelId, username, content, fileInfo = null) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
-
     if (res.ok || res.status === 204) {
-      console.log(`[Discord] ✅ #${channelId} 送信成功 (status: ${res.status})`);
+      console.log(`[Webhook→Discord] ✅ 送信成功`);
     } else {
-      const errText = await res.text();
-      console.error(`[Discord] ❌ #${channelId} 送信失敗 (status: ${res.status})`);
-      console.error(`[Discord]    レスポンス: ${errText}`);
-      console.error(`[Discord]    Webhook URL先頭: ${webhookUrl.substring(0, 60)}...`);
+      console.error(`[Webhook→Discord] ❌ 失敗 (${res.status}): ${await res.text()}`);
     }
   } catch (err) {
-    console.error(`[Discord] ❌ fetch エラー: ${err.message}`);
+    console.error(`[Webhook→Discord] ❌ エラー: ${err.message}`);
   }
+}
+
+// ── Discord Bot (Discord→サイト 受信用) ───────────────────────────
+function startDiscordBot() {
+  const token = process.env.DISCORD_BOT_TOKEN;
+  if (!token) {
+    console.warn('⚠️  DISCORD_BOT_TOKEN 未設定 → Discord→サイト の受信は無効');
+    return;
+  }
+
+  const bot = new Client({
+    intents: [
+      GatewayIntentBits.Guilds,
+      GatewayIntentBits.GuildMessages,
+      GatewayIntentBits.MessageContent,
+    ]
+  });
+
+  bot.once('ready', () => {
+    console.log(`✅ Discord Bot ログイン成功: ${bot.user.tag}`);
+
+    // 逆引きマップを構築
+    APP_CHANNELS.forEach(appCh => {
+      const discordChId = getDiscordChannelId(appCh);
+      if (discordChId) {
+        discordToApp[discordChId] = appCh;
+        console.log(`  📌 Discord #${discordChId} ↔ App #${appCh}`);
+      } else {
+        console.warn(`  ⚠️  DISCORD_CHANNEL_ID_${appCh} 未設定`);
+      }
+    });
+  });
+
+  bot.on('messageCreate', (message) => {
+    // ① Bot自身のメッセージは無視
+    if (message.author.bot) return;
+
+    // ② Webhookのメッセージは無視（サイト→Discordのエコーバック防止）
+    if (message.webhookId) return;
+
+    // ③ 対象チャンネルか確認
+    const appChannelId = discordToApp[message.channelId];
+    if (!appChannelId) return;
+
+    const content = message.content;
+    const username = message.author.displayName || message.author.username;
+
+    console.log(`[Discord→サイト] #${appChannelId} "${username}": ${content}`);
+
+    // ④ アプリのメッセージとして Socket.io でブロードキャスト
+    const msg = buildMessage(
+      `${username} [Discord]`,
+      content,
+      appChannelId,
+      'text'
+    );
+    channels[appChannelId]?.messages.push(msg);
+    io.to(appChannelId).emit('message', msg);
+  });
+
+  bot.on('error', (err) => {
+    console.error('[Discord Bot] エラー:', err.message);
+  });
+
+  bot.login(token).catch(err => {
+    console.error('❌ Discord Bot ログイン失敗:', err.message);
+    console.error('   DISCORD_BOT_TOKEN が正しいか確認してください。');
+  });
+}
+
+// ── 起動時設定確認ログ ─────────────────────────────────────────────
+function checkConfig() {
+  console.log('── Discord 設定確認 ──────────────────────────');
+  console.log('  [Webhook: サイト→Discord]');
+  APP_CHANNELS.forEach(ch => {
+    const url = process.env[`DISCORD_WEBHOOK_${ch}`];
+    console.log(`    ${url ? '✅' : '❌'} DISCORD_WEBHOOK_${ch}`);
+  });
+  console.log('  [Bot: Discord→サイト]');
+  console.log(`    ${process.env.DISCORD_BOT_TOKEN ? '✅' : '❌'} DISCORD_BOT_TOKEN`);
+  APP_CHANNELS.forEach(ch => {
+    const id = process.env[`DISCORD_CHANNEL_ID_${ch}`];
+    console.log(`    ${id ? '✅' : '❌'} DISCORD_CHANNEL_ID_${ch}${id ? ' = ' + id : ''}`);
+  });
+  console.log('─────────────────────────────────────────────');
 }
 
 // ── MongoDB + インメモリフォールバック ────────────────────────────
@@ -139,8 +202,7 @@ async function connectMongo() {
     await usersCol.createIndex({ usernameLower: 1 }, { unique: true });
     console.log('✅ MongoDB connected');
   } catch (err) {
-    console.error('❌ MongoDB 接続失敗 → インメモリモードで続行');
-    console.error('   原因:', err.message);
+    console.error('❌ MongoDB 接続失敗 → インメモリモードで続行:', err.message);
     usersCol = null;
   }
 }
@@ -192,41 +254,16 @@ function authMiddleware(req, res, next) {
   next();
 }
 
-// ── REST: Health / Discord テスト ─────────────────────────────────
+// ── REST: Health ──────────────────────────────────────────────────
 app.get('/health', (req, res) => {
-  const webhooks = {};
-  CHANNEL_IDS.forEach(ch => {
-    webhooks[ch] = !!getDiscordWebhook(ch);
+  res.json({
+    status: 'ok',
+    mongo: usersCol ? 'connected' : 'in-memory',
+    discord_bot: !!process.env.DISCORD_BOT_TOKEN,
+    discord_channels: Object.fromEntries(
+      APP_CHANNELS.map(ch => [ch, discordToApp[getDiscordChannelId(ch)] ? '✅' : '❌'])
+    )
   });
-  res.json({ status: 'ok', mongo: usersCol ? 'connected' : 'in-memory', discord_webhooks: webhooks });
-});
-
-// Discord疎通テスト用エンドポイント（認証不要・開発用）
-app.post('/api/discord-test', async (req, res) => {
-  const { channelId = 'general', message = 'NexusChat テスト送信 🚀' } = req.body;
-  const webhookUrl = getDiscordWebhook(channelId);
-  if (!webhookUrl) {
-    return res.status(400).json({
-      error: `DISCORD_WEBHOOK_${channelId} が設定されていません`,
-      hint: 'Render の Environment Variables を確認してください'
-    });
-  }
-  try {
-    const r = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: 'NexusChat テスト', content: message })
-    });
-    const status = r.status;
-    if (status === 204 || r.ok) {
-      res.json({ success: true, status, message: 'Discordへの送信成功！' });
-    } else {
-      const body = await r.text();
-      res.status(500).json({ success: false, status, discord_response: body });
-    }
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
 });
 
 // ── REST: Auth ────────────────────────────────────────────────────
@@ -239,8 +276,7 @@ app.post('/api/register', async (req, res) => {
 
   const passwordHash = await bcrypt.hash(password, 10);
   const user = {
-    id: uuidv4(),
-    username,
+    id: uuidv4(), username,
     usernameLower: username.toLowerCase(),
     passwordHash,
     avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(username)}`,
@@ -249,22 +285,19 @@ app.post('/api/register', async (req, res) => {
   try {
     await Users.insertOne(user);
   } catch (e) {
-    if (e.code === 11000)
-      return res.status(409).json({ error: 'Username already taken' });
+    if (e.code === 11000) return res.status(409).json({ error: 'Username already taken' });
     throw e;
   }
-  const token = generateToken(user);
-  res.json({ token, user: { id: user.id, username: user.username, avatar: user.avatar } });
+  res.json({ token: generateToken(user), user: { id: user.id, username: user.username, avatar: user.avatar } });
 });
 
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
   const user = await Users.findOne({ usernameLower: username?.toLowerCase() });
   if (!user) return res.status(401).json({ error: 'Invalid username or password' });
-  const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid) return res.status(401).json({ error: 'Invalid username or password' });
-  const token = generateToken(user);
-  res.json({ token, user: { id: user.id, username: user.username, avatar: user.avatar } });
+  if (!await bcrypt.compare(password, user.passwordHash))
+    return res.status(401).json({ error: 'Invalid username or password' });
+  res.json({ token: generateToken(user), user: { id: user.id, username: user.username, avatar: user.avatar } });
 });
 
 app.get('/api/me', authMiddleware, async (req, res) => {
@@ -273,7 +306,6 @@ app.get('/api/me', authMiddleware, async (req, res) => {
   res.json({ id: user.id, username: user.username, avatar: user.avatar });
 });
 
-// ── REST: Channels ────────────────────────────────────────────────
 app.get('/api/channels', authMiddleware, (req, res) => {
   res.json(Object.values(channels).map(c => ({ id: c.id, name: c.name })));
 });
@@ -284,14 +316,13 @@ app.get('/api/channels/:id/messages', authMiddleware, (req, res) => {
   res.json(ch.messages.slice(-100));
 });
 
-// ── REST: File Upload ─────────────────────────────────────────────
 app.post('/api/upload', authMiddleware, upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
   res.json({
-    filename:   req.file.originalname,
-    url:        `/uploads/${req.file.filename}`,
-    mimetype:   req.file.mimetype,
-    size:       req.file.size,
+    filename: req.file.originalname,
+    url: `/uploads/${req.file.filename}`,
+    mimetype: req.file.mimetype,
+    size: req.file.size,
     uploadedBy: req.user.username,
     uploadedAt: new Date().toISOString()
   });
@@ -326,7 +357,6 @@ io.on('connection', (socket) => {
     const msg = buildMessage(socket.user.username, content.trim(), channelId, 'text');
     channels[channelId].messages.push(msg);
     io.to(channelId).emit('message', msg);
-    // Discord転送（非同期・失敗してもチャットには影響しない）
     sendToDiscord(channelId, socket.user.username, content.trim()).catch(() => {});
   });
 
@@ -356,6 +386,7 @@ function buildMessage(author, content, channelId, type, fileInfo = null) {
 // ── Start ─────────────────────────────────────────────────────────
 server.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
-  checkDiscordConfig(); // 起動時にDiscord設定を確認
+  checkConfig();
   connectMongo().catch(err => console.error('connectMongo error:', err));
+  startDiscordBot();
 });

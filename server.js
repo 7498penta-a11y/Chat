@@ -22,195 +22,155 @@ const MONGO_URI  = process.env.MONGO_URI  || '';
 const DB_NAME    = process.env.DB_NAME    || 'chatapp';
 
 // ── チャンネルマッピング ──────────────────────────────────────────
-const APP_CHANNELS = ['general', 'random', 'media', 'dev'];
-const discordToApp = {}; // discordChannelId → appChannelId
+const APP_CHANNELS   = ['general', 'random', 'media', 'dev'];
+const VOICE_CHANNELS = ['voice-general', 'voice-gaming'];
+const discordToApp   = {};
 
 function getDiscordChannelId(appCh) {
   return process.env[`DISCORD_CHANNEL_ID_${appCh}`] || null;
 }
-function getDiscordWebhook(appCh) {
-  return process.env[`DISCORD_WEBHOOK_${appCh}`] || process.env.DISCORD_WEBHOOK_DEFAULT || null;
-}
 
-// ── Discord Bot (グローバルで保持) ────────────────────────────────
-let discordBot = null; // Bot ready後にセット
+// ── Discord Bot ────────────────────────────────────────────────────
+let discordBot = null;
 
-// Discord メッセージ → アプリ共通フォーマット変換
 function discordMsgToApp(dMsg, appChannelId) {
-  // Webhookで送ったサイト発メッセージは "(web#xxx)" suffix が付いている
-  const isFromSite = dMsg.webhookId != null;
-  const rawAuthor  = dMsg.author?.username || 'Discord';
-  // webhook名から "(web#channelId)" を除去してサイト側のユーザー名に戻す
-  const author = isFromSite
-    ? rawAuthor.replace(/\s*\(web#\w+\)$/, '')
-    : `${rawAuthor} [Discord]`;
+  const isFromBot = discordBot && dMsg.author?.id === discordBot.user?.id;
+  let author, content;
 
-  // 添付ファイル
+  if (isFromBot) {
+    const match = dMsg.content?.match(/^\*\*\[(.+?)\]\*\*: ([\s\S]*)$/);
+    if (match) { author = match[1]; content = match[2]; }
+    else { author = 'Web User'; content = dMsg.content; }
+  } else {
+    author  = `${dMsg.author?.username} [Discord]`;
+    content = dMsg.content;
+  }
+
   const attach = dMsg.attachments?.first();
   if (attach) {
     const isImage = attach.contentType?.startsWith('image/') ?? /\.(png|jpe?g|gif|webp)$/i.test(attach.name);
     return {
-      id:        dMsg.id,
-      author,
-      content:   attach.name,
-      channelId: appChannelId,
-      type:      'file',
-      fileInfo: {
-        filename: attach.name,
-        url:      attach.url,
+      id: dMsg.id, author, content: attach.name, channelId: appChannelId,
+      type: 'file', fileInfo: {
+        filename: attach.name, url: attach.url,
         mimetype: attach.contentType || (isImage ? 'image/png' : 'application/octet-stream'),
-        size:     attach.size || 0,
+        size: attach.size || 0,
       },
-      timestamp: dMsg.createdAt.toISOString(),
-      fromDiscord: !isFromSite,
+      timestamp: dMsg.createdAt.toISOString(), fromDiscord: !isFromBot,
     };
   }
-
   return {
-    id:          dMsg.id,
-    author,
-    content:     dMsg.content || '',
-    channelId:   appChannelId,
-    type:        'text',
-    fileInfo:    null,
-    timestamp:   dMsg.createdAt.toISOString(),
-    fromDiscord: !isFromSite,
+    id: dMsg.id, author, content: content || '', channelId: appChannelId,
+    type: 'text', fileInfo: null,
+    timestamp: dMsg.createdAt.toISOString(), fromDiscord: !isFromBot,
   };
 }
 
-// Discord チャンネルから過去メッセージを取得（最大100件）
 async function fetchDiscordHistory(appChannelId, limit = 50) {
   if (!discordBot) return null;
   const discordChId = getDiscordChannelId(appChannelId);
   if (!discordChId) return null;
-
   try {
     const ch = await discordBot.channels.fetch(discordChId);
     if (!ch || !ch.isTextBased()) return null;
-
     const fetched = await ch.messages.fetch({ limit });
-    // Discord APIは新しい順で返るので古い順に並べ替え
     const sorted = [...fetched.values()].sort((a, b) => a.createdTimestamp - b.createdTimestamp);
-
-    // 空メッセージ（embed only等）は除外
-    return sorted
-      .filter(m => m.content || m.attachments.size > 0)
-      .map(m => discordMsgToApp(m, appChannelId));
+    return sorted.filter(m => m.content || m.attachments.size > 0).map(m => discordMsgToApp(m, appChannelId));
   } catch (err) {
     console.error(`[Discord履歴] #${appChannelId} 取得失敗:`, err.message);
     return null;
   }
 }
 
-// ── Discord Webhook (サイト→Discord) ─────────────────────────────
-async function sendToDiscord(appChannelId, username, content, fileInfo = null) {
-  const webhookUrl = getDiscordWebhook(appChannelId);
-  if (!webhookUrl) return;
-
-  const body = { username: `${username} (web#${appChannelId})` };
-  if (fileInfo) {
-    body.embeds = [{
-      title: '📎 ' + fileInfo.filename,
-      description: `**${username}** がファイルを送信しました`,
-      color: 0x5865F2,
-      footer: { text: `#${appChannelId} | NexusChat` },
-      timestamp: new Date().toISOString()
-    }];
-  } else {
-    body.content = content;
-  }
-
+// サイト→Discord送信（Botを使用）
+async function sendToDiscordViaBot(appChannelId, username, content, fileInfo = null) {
+  if (!discordBot) return;
+  const discordChId = getDiscordChannelId(appChannelId);
+  if (!discordChId) return;
   try {
-    const res = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    if (res.ok || res.status === 204) {
-      console.log(`[Webhook→Discord] ✅ #${appChannelId} "${username}"`);
+    const ch = await discordBot.channels.fetch(discordChId);
+    if (!ch?.isTextBased()) return;
+    if (fileInfo) {
+      await ch.send(`**[${username}]**: 📎 ${fileInfo.filename}`);
     } else {
-      console.error(`[Webhook→Discord] ❌ (${res.status}): ${await res.text()}`);
+      await ch.send(`**[${username}]**: ${content}`);
     }
+    console.log(`[Bot→Discord] ✅ #${appChannelId} "${username}"`);
   } catch (err) {
-    console.error(`[Webhook→Discord] ❌ ${err.message}`);
+    console.error(`[Bot→Discord] ❌ ${err.message}`);
   }
 }
 
-// ── Discord Bot 起動 ──────────────────────────────────────────────
 function startDiscordBot() {
   const botToken = process.env.DISCORD_BOT_TOKEN;
-  if (!botToken) {
-    console.warn('⚠️  DISCORD_BOT_TOKEN 未設定 → Discord連携は無効');
-    return;
-  }
+  if (!botToken) { console.warn('⚠️  DISCORD_BOT_TOKEN 未設定 → Discord連携は無効'); return; }
 
   const bot = new Client({
-    intents: [
-      GatewayIntentBits.Guilds,
-      GatewayIntentBits.GuildMessages,
-      GatewayIntentBits.MessageContent,
-    ]
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
   });
 
   bot.once('clientReady', () => {
-    discordBot = bot; // グローバルにセット（履歴取得で使用）
+    discordBot = bot;
     console.log(`✅ Discord Bot ログイン成功: ${bot.user.tag}`);
     APP_CHANNELS.forEach(appCh => {
       const id = getDiscordChannelId(appCh);
-      if (id) { discordToApp[id] = appCh; console.log(`  📌 Discord #${id} ↔ App #${appCh}`); }
+      if (id) { discordToApp[id] = appCh; console.log(`  📌 #${id} ↔ #${appCh}`); }
       else console.warn(`  ⚠️  DISCORD_CHANNEL_ID_${appCh} 未設定`);
     });
   });
 
-  // リアルタイム受信（Discord → サイト）
   bot.on('messageCreate', (message) => {
+    if (message.author.id === bot.user?.id) return; // 自サイト経由のメッセージをスキップ
     if (message.author.bot) return;
-    if (message.webhookId) return; // サイトからのWebhookはエコーバックしない
 
     const appChannelId = discordToApp[message.channelId];
     if (!appChannelId) return;
 
     const msg = discordMsgToApp(message, appChannelId);
     channels[appChannelId]?.messages.push(msg);
+    if (messagesCol) messagesCol.insertOne({ ...msg }).catch(() => {});
     io.to(appChannelId).emit('message', msg);
     console.log(`[Discord→サイト] #${appChannelId} "${msg.author}": ${msg.content.substring(0, 50)}`);
   });
 
   bot.on('error', err => console.error('[Discord Bot]', err.message));
-  bot.login(botToken).catch(err => {
-    console.error('❌ Discord Bot ログイン失敗:', err.message);
-  });
+  bot.login(botToken).catch(err => console.error('❌ Discord Bot ログイン失敗:', err.message));
 }
 
-// ── 設定確認ログ ──────────────────────────────────────────────────
-function checkConfig() {
-  console.log('── Discord 設定確認 ──────────────────────────');
-  APP_CHANNELS.forEach(ch => {
-    const w = !!getDiscordWebhook(ch), c = !!getDiscordChannelId(ch);
-    console.log(`  #${ch}: Webhook ${w?'✅':'❌'}  ChannelID ${c?'✅':'❌'}`);
-  });
-  console.log(`  BOT_TOKEN: ${process.env.DISCORD_BOT_TOKEN ? '✅' : '❌'}`);
-  console.log('─────────────────────────────────────────────');
-}
+// ── MongoDB ────────────────────────────────────────────────────────
+let usersCol    = null;
+let messagesCol = null;
+let dmsCol      = null;
+let pinsCol     = null;
 
-// ── MongoDB + インメモリフォールバック ────────────────────────────
-let usersCol = null;
 const inMemoryUsers = {};
 const Users = {
   async findOne(q) {
     if (usersCol) return usersCol.findOne(q);
+    if (q.id) return Object.values(inMemoryUsers).find(u => u.id === q.id) || null;
     if (q.usernameLower !== undefined)
       return Object.values(inMemoryUsers).find(u => u.usernameLower === q.usernameLower) || null;
     return null;
   },
   async insertOne(doc) {
     if (usersCol) return usersCol.insertOne(doc);
-    if (inMemoryUsers[doc.usernameLower]) {
-      const e = new Error('duplicate'); e.code = 11000; throw e;
-    }
+    if (inMemoryUsers[doc.usernameLower]) { const e = new Error('dup'); e.code = 11000; throw e; }
     inMemoryUsers[doc.usernameLower] = doc;
     return { insertedId: doc.id };
-  }
+  },
+  async updateOne(q, update) {
+    if (usersCol) return usersCol.updateOne(q, update);
+    const user = await this.findOne(q);
+    if (user && update.$set) Object.assign(user, update.$set);
+  },
+  async countDocuments() {
+    if (usersCol) return usersCol.countDocuments();
+    return Object.keys(inMemoryUsers).length;
+  },
+  async find() {
+    if (usersCol) return usersCol.find({}).toArray();
+    return Object.values(inMemoryUsers);
+  },
 };
 
 async function connectMongo() {
@@ -219,46 +179,59 @@ async function connectMongo() {
   try {
     await client.connect();
     await client.db('admin').command({ ping: 1 });
-    const db = client.db(DB_NAME);
-    usersCol = db.collection('users');
+    const db    = client.db(DB_NAME);
+    usersCol    = db.collection('users');
+    messagesCol = db.collection('messages');
+    dmsCol      = db.collection('dms');
+    pinsCol     = db.collection('pins');
+
     await usersCol.createIndex({ usernameLower: 1 }, { unique: true });
+    await messagesCol.createIndex({ content: 'text' });
+    await messagesCol.createIndex({ channelId: 1, timestamp: 1 });
+    await dmsCol.createIndex({ roomId: 1, timestamp: 1 });
+    await pinsCol.createIndex({ channelId: 1 });
     console.log('✅ MongoDB connected');
   } catch (err) {
     console.error('❌ MongoDB 接続失敗 → インメモリ続行:', err.message);
-    usersCol = null;
+    usersCol = messagesCol = dmsCol = pinsCol = null;
   }
 }
 
 // ── In-memory state ───────────────────────────────────────────────
 const channels = {
-  general: { id: 'general', name: 'general', messages: [] },
-  random:  { id: 'random',  name: 'random',  messages: [] },
-  media:   { id: 'media',   name: 'media',   messages: [] },
-  dev:     { id: 'dev',     name: 'dev',     messages: [] },
+  general: { id: 'general', name: 'general', messages: [], pins: [] },
+  random:  { id: 'random',  name: 'random',  messages: [], pins: [] },
+  media:   { id: 'media',   name: 'media',   messages: [], pins: [] },
+  dev:     { id: 'dev',     name: 'dev',     messages: [], pins: [] },
 };
-const onlineUsers = {};
+const dmMessages   = {};
+const onlineUsers  = {};
+const voiceRooms   = {};
+const socketByUser = {};
 
 // ── Uploads ───────────────────────────────────────────────────────
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR);
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOADS_DIR),
-  filename:    (req, file, cb) => cb(null, uuidv4() + path.extname(file.originalname))
+  filename:    (req, file, cb) => cb(null, uuidv4() + path.extname(file.originalname)),
 });
 const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } });
 
-// ── Middleware ────────────────────────────────────────────────────
+// ── Middleware ─────────────────────────────────────────────────────
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(UPLOADS_DIR));
 app.get('/', (req, res) => {
-  const f = path.join(__dirname, 'index.html');
-  fs.existsSync(f) ? res.sendFile(f) : res.status(404).send('index.html not found');
+  const f = path.join(__dirname, 'public/index.html');
+  fs.existsSync(f) ? res.sendFile(f) : res.status(404).send('Not found');
 });
 
-// ── Auth ──────────────────────────────────────────────────────────
-function generateToken(user) { return jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '7d' }); }
+// ── Auth helpers ──────────────────────────────────────────────────
+function generateToken(user) {
+  return jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+}
 function verifyToken(t) { try { return jwt.verify(t, JWT_SECRET); } catch { return null; } }
 function authMiddleware(req, res, next) {
   const auth = req.headers.authorization;
@@ -267,24 +240,30 @@ function authMiddleware(req, res, next) {
   if (!user) return res.status(401).json({ error: 'Invalid token' });
   req.user = user; next();
 }
+function adminOnly(req, res, next) {
+  if (req.user?.role !== 'admin') return res.status(403).json({ error: '管理者権限が必要です' });
+  next();
+}
 
 // ── REST ──────────────────────────────────────────────────────────
-app.get('/health', (req, res) => res.json({
-  status: 'ok',
-  mongo: usersCol ? 'connected' : 'in-memory',
-  discord_bot: !!discordBot,
-}));
+app.get('/health', (req, res) => res.json({ status: 'ok', mongo: !!usersCol, discord_bot: !!discordBot }));
 
 app.post('/api/register', async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
   if (username.length < 3 || username.length > 20) return res.status(400).json({ error: 'Username must be 3-20 characters' });
+
+  const count = await Users.countDocuments();
+  const role  = count === 0 ? 'admin' : 'member';
   const passwordHash = await bcrypt.hash(password, 10);
-  const user = { id: uuidv4(), username, usernameLower: username.toLowerCase(), passwordHash,
-    avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(username)}`, createdAt: new Date() };
+  const user = {
+    id: uuidv4(), username, usernameLower: username.toLowerCase(), passwordHash, role,
+    avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(username)}`,
+    createdAt: new Date(),
+  };
   try { await Users.insertOne(user); }
   catch (e) { if (e.code === 11000) return res.status(409).json({ error: 'Username already taken' }); throw e; }
-  res.json({ token: generateToken(user), user: { id: user.id, username: user.username, avatar: user.avatar } });
+  res.json({ token: generateToken(user), user: { id: user.id, username: user.username, avatar: user.avatar, role: user.role } });
 });
 
 app.post('/api/login', async (req, res) => {
@@ -292,43 +271,105 @@ app.post('/api/login', async (req, res) => {
   const user = await Users.findOne({ usernameLower: username?.toLowerCase() });
   if (!user || !await bcrypt.compare(password, user.passwordHash))
     return res.status(401).json({ error: 'Invalid username or password' });
-  res.json({ token: generateToken(user), user: { id: user.id, username: user.username, avatar: user.avatar } });
+  res.json({ token: generateToken(user), user: { id: user.id, username: user.username, avatar: user.avatar, role: user.role } });
 });
 
 app.get('/api/me', authMiddleware, async (req, res) => {
   const user = await Users.findOne({ usernameLower: req.user.username.toLowerCase() });
   if (!user) return res.status(404).json({ error: 'User not found' });
-  res.json({ id: user.id, username: user.username, avatar: user.avatar });
+  res.json({ id: user.id, username: user.username, avatar: user.avatar, role: user.role });
 });
 
 app.get('/api/channels', authMiddleware, (req, res) => {
-  res.json(Object.values(channels).map(c => ({ id: c.id, name: c.name })));
+  const text  = Object.values(channels).map(c => ({ id: c.id, name: c.name, type: 'text' }));
+  const voice = VOICE_CHANNELS.map(id => ({ id, name: id.replace('voice-',''), type: 'voice' }));
+  res.json([...text, ...voice]);
 });
 
-// ── メッセージ取得: Discord履歴を優先、なければインメモリ ──────────
 app.get('/api/channels/:id/messages', authMiddleware, async (req, res) => {
   const channelId = req.params.id;
   const ch = channels[channelId];
   if (!ch) return res.status(404).json({ error: 'Channel not found' });
-
   const limit = Math.min(parseInt(req.query.limit) || 50, 100);
-  const discordHistory = await fetchDiscordHistory(channelId, limit);
 
+  const discordHistory = await fetchDiscordHistory(channelId, limit);
   if (discordHistory && discordHistory.length > 0) {
-    // Discordの履歴をインメモリにも同期（重複はIDで除外）
     const existingIds = new Set(ch.messages.map(m => m.id));
     for (const msg of discordHistory) {
-      if (!existingIds.has(msg.id)) ch.messages.push(msg);
+      if (!existingIds.has(msg.id)) {
+        ch.messages.push(msg);
+        if (messagesCol) messagesCol.updateOne({ id: msg.id }, { $setOnInsert: msg }, { upsert: true }).catch(() => {});
+      }
     }
-    // タイムスタンプ順でソートして返す
-    const sorted = [...ch.messages].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-    console.log(`[履歴] #${channelId}: Discord ${discordHistory.length}件 + インメモリ → 計${sorted.length}件`);
-    return res.json(sorted.slice(-limit));
+    return res.json([...ch.messages].sort((a,b) => new Date(a.timestamp)-new Date(b.timestamp)).slice(-limit));
   }
 
-  // Discordが使えない場合はインメモリのみ
-  console.log(`[履歴] #${channelId}: インメモリのみ ${ch.messages.length}件 (Discord Bot未接続)`);
+  if (messagesCol) {
+    const msgs = await messagesCol.find({ channelId }).sort({ timestamp: 1 }).limit(limit).toArray();
+    if (msgs.length > 0) return res.json(msgs);
+  }
   res.json(ch.messages.slice(-limit));
+});
+
+app.get('/api/channels/:id/pins', authMiddleware, async (req, res) => {
+  const channelId = req.params.id;
+  const ch = channels[channelId];
+  if (!ch) return res.status(404).json({ error: 'Channel not found' });
+  if (pinsCol) return res.json(await pinsCol.find({ channelId }).sort({ pinnedAt: -1 }).toArray());
+  res.json(ch.pins || []);
+});
+
+// 全文検索
+app.get('/api/search', authMiddleware, async (req, res) => {
+  const { q, channel } = req.query;
+  if (!q || q.trim().length < 2) return res.status(400).json({ error: '検索ワードは2文字以上' });
+
+  if (messagesCol) {
+    const filter = { $text: { $search: q } };
+    if (channel) filter.channelId = channel;
+    const results = await messagesCol
+      .find(filter, { projection: { score: { $meta: 'textScore' } } })
+      .sort({ score: { $meta: 'textScore' } })
+      .limit(20).toArray();
+    return res.json(results);
+  }
+  // In-memory fallback
+  const results = [];
+  for (const ch of Object.values(channels)) {
+    if (channel && ch.id !== channel) continue;
+    for (const msg of ch.messages) {
+      if (msg.type === 'text' && msg.content?.toLowerCase().includes(q.toLowerCase())) results.push(msg);
+    }
+  }
+  res.json(results.slice(0, 20));
+});
+
+// DM 履歴
+app.get('/api/dm/:roomId', authMiddleware, async (req, res) => {
+  const { roomId } = req.params;
+  const [u1, u2] = roomId.split('__');
+  if (req.user.username !== u1 && req.user.username !== u2)
+    return res.status(403).json({ error: 'Access denied' });
+  if (dmsCol) return res.json(await dmsCol.find({ roomId }).sort({ timestamp: 1 }).limit(100).toArray());
+  res.json(dmMessages[roomId] || []);
+});
+
+// ロール変更 (adminのみ)
+app.put('/api/users/:username/role', authMiddleware, adminOnly, async (req, res) => {
+  const { role } = req.body;
+  if (!['admin','moderator','member'].includes(role)) return res.status(400).json({ error: '無効なロール' });
+  const user = await Users.findOne({ usernameLower: req.params.username.toLowerCase() });
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  await Users.updateOne({ usernameLower: req.params.username.toLowerCase() }, { $set: { role } });
+  const sid = socketByUser[req.params.username];
+  if (sid) io.to(sid).emit('role_changed', { role });
+  io.emit('user_role_updated', { username: req.params.username, role });
+  res.json({ ok: true, username: req.params.username, role });
+});
+
+app.get('/api/users', authMiddleware, adminOnly, async (req, res) => {
+  const users = await Users.find();
+  res.json(users.map(u => ({ id: u.id, username: u.username, role: u.role, avatar: u.avatar })));
 });
 
 app.post('/api/upload', authMiddleware, upload.single('file'), (req, res) => {
@@ -336,7 +377,6 @@ app.post('/api/upload', authMiddleware, upload.single('file'), (req, res) => {
   res.json({
     filename: req.file.originalname, url: `/uploads/${req.file.filename}`,
     mimetype: req.file.mimetype, size: req.file.size,
-    uploadedBy: req.user.username, uploadedAt: new Date().toISOString()
   });
 });
 
@@ -347,38 +387,94 @@ io.use((socket, next) => {
   socket.user = user; next();
 });
 
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
   console.log(`[+] ${socket.user.username} connected`);
-  onlineUsers[socket.id] = { username: socket.user.username, channelId: null };
-  io.emit('online_users', Object.values(onlineUsers).map(u => u.username));
+  const fullUser = await Users.findOne({ usernameLower: socket.user.username.toLowerCase() });
+  socket.user.role   = fullUser?.role   || socket.user.role || 'member';
+  socket.user.userId = fullUser?.id     || socket.user.id;
 
+  onlineUsers[socket.id]            = { username: socket.user.username, userId: socket.user.userId, channelId: null, voiceChannelId: null };
+  socketByUser[socket.user.username] = socket.id;
+  broadcastOnlineUsers();
+
+  // テキストチャンネル参加
   socket.on('join_channel', (channelId) => {
     if (!channels[channelId]) return;
     const prev = onlineUsers[socket.id]?.channelId;
     if (prev) socket.leave(prev);
     socket.join(channelId);
     onlineUsers[socket.id].channelId = channelId;
-    const sys = buildMessage('system', `${socket.user.username} joined #${channelId}`, channelId, 'system');
+    const sys = buildMsg('system', `${socket.user.username} が参加しました`, channelId, 'system');
     channels[channelId].messages.push(sys);
     socket.to(channelId).emit('message', sys);
   });
 
+  // メッセージ送信
   socket.on('send_message', async ({ channelId, content }) => {
     if (!channels[channelId] || !content?.trim()) return;
-    const msg = buildMessage(socket.user.username, content.trim(), channelId, 'text');
+    const msg = buildMsg(socket.user.username, content.trim(), channelId, 'text');
     channels[channelId].messages.push(msg);
+    if (messagesCol) messagesCol.insertOne({ ...msg }).catch(() => {});
     io.to(channelId).emit('message', msg);
-    sendToDiscord(channelId, socket.user.username, content.trim()).catch(() => {});
+    sendToDiscordViaBot(channelId, socket.user.username, content.trim()).catch(() => {});
   });
 
+  // ファイル送信
   socket.on('send_file', async ({ channelId, fileInfo }) => {
     if (!channels[channelId] || !fileInfo) return;
-    const msg = buildMessage(socket.user.username, fileInfo.filename, channelId, 'file', fileInfo);
+    const msg = buildMsg(socket.user.username, fileInfo.filename, channelId, 'file', fileInfo);
     channels[channelId].messages.push(msg);
+    if (messagesCol) messagesCol.insertOne({ ...msg }).catch(() => {});
     io.to(channelId).emit('message', msg);
-    sendToDiscord(channelId, socket.user.username, null, fileInfo).catch(() => {});
+    sendToDiscordViaBot(channelId, socket.user.username, null, fileInfo).catch(() => {});
   });
 
+  // メッセージ編集
+  socket.on('edit_message', async ({ msgId, channelId, content }) => {
+    if (!channels[channelId] || !content?.trim()) return;
+    const msg = channels[channelId].messages.find(m => m.id === msgId);
+    if (!msg) return;
+    if (msg.author !== socket.user.username && !['admin','moderator'].includes(socket.user.role)) return;
+    msg.content  = content.trim();
+    msg.edited   = true;
+    msg.editedAt = new Date().toISOString();
+    if (messagesCol) messagesCol.updateOne({ id: msgId }, { $set: { content: msg.content, edited: true, editedAt: msg.editedAt } }).catch(() => {});
+    io.to(channelId).emit('message_edited', { msgId, channelId, content: msg.content, editedAt: msg.editedAt });
+  });
+
+  // メッセージ削除
+  socket.on('delete_message', async ({ msgId, channelId }) => {
+    if (!channels[channelId]) return;
+    const msg = channels[channelId].messages.find(m => m.id === msgId);
+    if (!msg) return;
+    if (msg.author !== socket.user.username && !['admin','moderator'].includes(socket.user.role)) return;
+    channels[channelId].messages = channels[channelId].messages.filter(m => m.id !== msgId);
+    channels[channelId].pins     = (channels[channelId].pins || []).filter(p => p.id !== msgId);
+    if (messagesCol) messagesCol.deleteOne({ id: msgId }).catch(() => {});
+    if (pinsCol) pinsCol.deleteOne({ id: msgId, channelId }).catch(() => {});
+    io.to(channelId).emit('message_deleted', { msgId, channelId });
+  });
+
+  // ピン留め
+  socket.on('pin_message', async ({ msgId, channelId }) => {
+    if (!channels[channelId] || !['admin','moderator'].includes(socket.user.role)) return;
+    const msg = channels[channelId].messages.find(m => m.id === msgId);
+    if (!msg || (channels[channelId].pins || []).find(p => p.id === msgId)) return;
+    const pin = { ...msg, pinnedBy: socket.user.username, pinnedAt: new Date().toISOString() };
+    channels[channelId].pins = channels[channelId].pins || [];
+    channels[channelId].pins.push(pin);
+    if (pinsCol) pinsCol.insertOne({ ...pin, channelId }).catch(() => {});
+    io.to(channelId).emit('pin_update', { channelId, pins: channels[channelId].pins });
+  });
+
+  socket.on('unpin_message', async ({ msgId, channelId }) => {
+    if (!channels[channelId] || !['admin','moderator'].includes(socket.user.role)) return;
+    channels[channelId].pins = (channels[channelId].pins || []).filter(p => p.id !== msgId);
+    if (pinsCol) pinsCol.deleteOne({ id: msgId, channelId }).catch(() => {});
+    io.to(channelId).emit('pin_update', { channelId, pins: channels[channelId].pins });
+  });
+
+  // リアクション
   socket.on('add_reaction', ({ msgId, emoji, channelId }) => {
     if (!channels[channelId] || !msgId || !emoji) return;
     const msg = channels[channelId].messages.find(m => m.id === msgId);
@@ -386,31 +482,105 @@ io.on('connection', (socket) => {
     if (!msg.reactions) msg.reactions = {};
     if (!msg.reactions[emoji]) msg.reactions[emoji] = [];
     const users = msg.reactions[emoji];
-    const idx = users.indexOf(socket.user.username);
+    const idx   = users.indexOf(socket.user.username);
     if (idx === -1) users.push(socket.user.username);
-    else { users.splice(idx, 1); if (!users.length) delete msg.reactions[emoji]; }
+    else { users.splice(idx,1); if(!users.length) delete msg.reactions[emoji]; }
     io.to(channelId).emit('reaction_update', { msgId, reactions: msg.reactions });
   });
 
+  // タイピング
   socket.on('typing', ({ channelId, isTyping }) => {
     socket.to(channelId).emit('typing', { username: socket.user.username, isTyping });
   });
 
+  // DM送信
+  socket.on('send_dm', async ({ toUsername, content }) => {
+    if (!content?.trim() || !toUsername) return;
+    const roomId = [socket.user.username, toUsername].sort().join('__');
+    const msg = {
+      id: uuidv4(), author: socket.user.username, content: content.trim(),
+      channelId: roomId, type: 'text', fileInfo: null,
+      timestamp: new Date().toISOString(), isDM: true,
+    };
+    if (!dmMessages[roomId]) dmMessages[roomId] = [];
+    dmMessages[roomId].push(msg);
+    if (dmsCol) dmsCol.insertOne({ ...msg, roomId }).catch(() => {});
+    socket.emit('dm_message', msg);
+    const toSid = socketByUser[toUsername];
+    if (toSid) io.to(toSid).emit('dm_message', msg);
+  });
+
+  // ボイスチャット参加
+  socket.on('join_voice', (channelId) => {
+    if (!VOICE_CHANNELS.includes(channelId)) return;
+    const prevVoice = onlineUsers[socket.id]?.voiceChannelId;
+    if (prevVoice) {
+      if (voiceRooms[prevVoice]) delete voiceRooms[prevVoice][socket.id];
+      socket.leave(`voice:${prevVoice}`);
+      io.to(`voice:${prevVoice}`).emit('voice_user_left', { username: socket.user.username, socketId: socket.id, channelId: prevVoice });
+    }
+    if (!voiceRooms[channelId]) voiceRooms[channelId] = {};
+    voiceRooms[channelId][socket.id] = { username: socket.user.username, userId: socket.user.userId };
+    socket.join(`voice:${channelId}`);
+    onlineUsers[socket.id].voiceChannelId = channelId;
+
+    const existingUsers = Object.entries(voiceRooms[channelId])
+      .filter(([sid]) => sid !== socket.id)
+      .map(([sid, u]) => ({ ...u, socketId: sid }));
+
+    socket.emit('voice_joined', { channelId, existingUsers });
+    socket.to(`voice:${channelId}`).emit('voice_user_joined', {
+      username: socket.user.username, userId: socket.user.userId, socketId: socket.id, channelId,
+    });
+    broadcastVoiceState();
+  });
+
+  socket.on('leave_voice', () => leaveVoice(socket));
+
+  // WebRTC シグナリング リレー
+  socket.on('voice_offer',  ({ to, offer })     => io.to(to).emit('voice_offer',  { from: socket.id, offer,     username: socket.user.username }));
+  socket.on('voice_answer', ({ to, answer })    => io.to(to).emit('voice_answer', { from: socket.id, answer }));
+  socket.on('voice_ice',    ({ to, candidate }) => io.to(to).emit('voice_ice',    { from: socket.id, candidate }));
+
   socket.on('disconnect', () => {
     console.log(`[-] ${socket.user.username} disconnected`);
+    leaveVoice(socket);
     delete onlineUsers[socket.id];
-    io.emit('online_users', Object.values(onlineUsers).map(u => u.username));
+    delete socketByUser[socket.user.username];
+    broadcastOnlineUsers();
   });
 });
 
-function buildMessage(author, content, channelId, type, fileInfo = null) {
+// ── ヘルパー ──────────────────────────────────────────────────────
+function leaveVoice(socket) {
+  const channelId = onlineUsers[socket.id]?.voiceChannelId;
+  if (!channelId) return;
+  if (voiceRooms[channelId]) delete voiceRooms[channelId][socket.id];
+  socket.leave(`voice:${channelId}`);
+  if (onlineUsers[socket.id]) onlineUsers[socket.id].voiceChannelId = null;
+  io.to(`voice:${channelId}`).emit('voice_user_left', { username: socket.user.username, socketId: socket.id, channelId });
+  broadcastVoiceState();
+}
+
+function broadcastOnlineUsers() {
+  io.emit('online_users', Object.values(onlineUsers).map(u => ({
+    username: u.username, userId: u.userId, voiceChannelId: u.voiceChannelId || null,
+  })));
+}
+
+function broadcastVoiceState() {
+  const state = {};
+  for (const [chId, room] of Object.entries(voiceRooms)) state[chId] = Object.values(room);
+  io.emit('voice_state', state);
+}
+
+function buildMsg(author, content, channelId, type, fileInfo = null) {
   return { id: uuidv4(), author, content, channelId, type, fileInfo, timestamp: new Date().toISOString() };
 }
 
 // ── Start ─────────────────────────────────────────────────────────
 server.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
-  checkConfig();
   connectMongo().catch(err => console.error('connectMongo error:', err));
   startDiscordBot();
 });

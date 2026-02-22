@@ -1,7 +1,7 @@
 {
   "name": "discord-like-app",
   "version": "1.0.0",
-  "description": "Discord-like chat application with file upload",
+  "description": "Discord-like chat application with file upload, MongoDB, and Discord integration",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -15,7 +15,8 @@
     "jsonwebtoken": "^9.0.0",
     "uuid": "^9.0.0",
     "cors": "^2.8.5",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "mongodb": "^6.3.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

@@ -35,11 +35,37 @@ let db;
 let usersCol;
 
 async function connectMongo() {
-  const client = new MongoClient(MONGO_URI);
-  await client.connect();
+  if (!process.env.MONGO_URI) {
+    throw new Error(
+      '❌ MONGO_URI が設定されていません。\n' +
+      'Render の Environment Variables に MONGO_URI (MongoDB Atlas の接続文字列) を追加してください。\n' +
+      '例: mongodb+srv://<user>:<password>@cluster.mongodb.net/?retryWrites=true&w=majority'
+    );
+  }
+
+  const client = new MongoClient(MONGO_URI, {
+    serverSelectionTimeoutMS: 10000, // 10秒でタイムアウト（デフォルト30秒）
+    connectTimeoutMS: 10000,
+  });
+
+  try {
+    await client.connect();
+    // 疎通確認
+    await client.db('admin').command({ ping: 1 });
+  } catch (err) {
+    throw new Error(
+      `❌ MongoDB に接続できません。\n` +
+      `URI: ${MONGO_URI.replace(/:\/\/.*@/, '://<credentials>@')}\n` +
+      `原因: ${err.message}\n\n` +
+      `確認事項:\n` +
+      `  1. MongoDB Atlas の Network Access で Render のIPを許可 (0.0.0.0/0 で全許可)\n` +
+      `  2. MONGO_URI の username/password が正しいか\n` +
+      `  3. Atlas クラスターが起動しているか`
+    );
+  }
+
   db = client.db(DB_NAME);
   usersCol = db.collection('users');
-  // username にユニークインデックス
   await usersCol.createIndex({ usernameLower: 1 }, { unique: true });
   console.log('✅ MongoDB connected');
 }

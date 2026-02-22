@@ -17,60 +17,63 @@ const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST'] }
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT       = process.env.PORT       || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-change-in-production';
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017';
-const DB_NAME = process.env.DB_NAME || 'chatapp';
+const MONGO_URI  = process.env.MONGO_URI  || '';
+const DB_NAME    = process.env.DB_NAME    || 'chatapp';
 
-// Discord Webhook URLs per channel (設定は .env で行う)
-// DISCORD_WEBHOOK_general=https://discord.com/api/webhooks/...
-// DISCORD_WEBHOOK_random=https://discord.com/api/webhooks/...
-// ※ チャンネル名をそのまま環境変数名に使う
+// ── Discord Webhook ───────────────────────────────────────────────
 function getDiscordWebhook(channelId) {
   return process.env[`DISCORD_WEBHOOK_${channelId}`] || process.env.DISCORD_WEBHOOK_DEFAULT || null;
 }
 
-// ── MongoDB ───────────────────────────────────────────────────────
-let db;
-let usersCol;
+// ── MongoDB + インメモリフォールバック ────────────────────────────
+let usersCol = null;          // null = MongoDB 未接続
+const inMemoryUsers = {};     // フォールバック用
+
+const Users = {
+  async findOne(query) {
+    if (usersCol) return usersCol.findOne(query);
+    if (query.usernameLower !== undefined)
+      return Object.values(inMemoryUsers).find(u => u.usernameLower === query.usernameLower) || null;
+    return null;
+  },
+  async insertOne(doc) {
+    if (usersCol) return usersCol.insertOne(doc);
+    if (inMemoryUsers[doc.usernameLower]) {
+      const err = new Error('duplicate key'); err.code = 11000; throw err;
+    }
+    inMemoryUsers[doc.usernameLower] = doc;
+    return { insertedId: doc.id };
+  }
+};
 
 async function connectMongo() {
-  if (!process.env.MONGO_URI) {
-    throw new Error(
-      '❌ MONGO_URI が設定されていません。\n' +
-      'Render の Environment Variables に MONGO_URI (MongoDB Atlas の接続文字列) を追加してください。\n' +
-      '例: mongodb+srv://<user>:<password>@cluster.mongodb.net/?retryWrites=true&w=majority'
-    );
+  if (!MONGO_URI) {
+    console.warn('⚠️  MONGO_URI 未設定 → インメモリモードで起動（再起動でデータ消失）');
+    console.warn('   Render Environment Variables に MONGO_URI を追加してください。');
+    return;
   }
-
   const client = new MongoClient(MONGO_URI, {
-    serverSelectionTimeoutMS: 10000, // 10秒でタイムアウト（デフォルト30秒）
-    connectTimeoutMS: 10000,
+    serverSelectionTimeoutMS: 8000,
+    connectTimeoutMS: 8000,
   });
-
   try {
     await client.connect();
-    // 疎通確認
     await client.db('admin').command({ ping: 1 });
+    const mongoDb = client.db(DB_NAME);
+    usersCol = mongoDb.collection('users');
+    await usersCol.createIndex({ usernameLower: 1 }, { unique: true });
+    console.log('✅ MongoDB connected');
   } catch (err) {
-    throw new Error(
-      `❌ MongoDB に接続できません。\n` +
-      `URI: ${MONGO_URI.replace(/:\/\/.*@/, '://<credentials>@')}\n` +
-      `原因: ${err.message}\n\n` +
-      `確認事項:\n` +
-      `  1. MongoDB Atlas の Network Access で Render のIPを許可 (0.0.0.0/0 で全許可)\n` +
-      `  2. MONGO_URI の username/password が正しいか\n` +
-      `  3. Atlas クラスターが起動しているか`
-    );
+    console.error('❌ MongoDB 接続失敗 → インメモリモードで続行');
+    console.error('   原因:', err.message);
+    console.error('   確認: Atlas Network Access で 0.0.0.0/0 を許可しているか確認してください。');
+    usersCol = null;
   }
-
-  db = client.db(DB_NAME);
-  usersCol = db.collection('users');
-  await usersCol.createIndex({ usernameLower: 1 }, { unique: true });
-  console.log('✅ MongoDB connected');
 }
 
-// ── In-memory (channels & online users) ──────────────────────────
+// ── In-memory state ───────────────────────────────────────────────
 const channels = {
   general: { id: 'general', name: 'general', messages: [] },
   random:  { id: 'random',  name: 'random',  messages: [] },
@@ -95,6 +98,13 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(UPLOADS_DIR));
 
+// index.html を public ではなくルートから配信
+app.get('/', (req, res) => {
+  const f = path.join(__dirname, 'index.html');
+  if (fs.existsSync(f)) res.sendFile(f);
+  else res.status(404).send('index.html not found');
+});
+
 // ── Auth helpers ──────────────────────────────────────────────────
 function generateToken(user) {
   return jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
@@ -114,14 +124,12 @@ function authMiddleware(req, res, next) {
 // ── Discord Webhook 送信 ──────────────────────────────────────────
 async function sendToDiscord(channelId, username, content, fileInfo = null) {
   const webhookUrl = getDiscordWebhook(channelId);
-  if (!webhookUrl) return; // Webhook未設定のチャンネルはスキップ
-
+  if (!webhookUrl) return;
   try {
     const body = {
       username: `${username} (${channelId})`,
       avatar_url: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(username)}`,
     };
-
     if (fileInfo) {
       body.embeds = [{
         title: '📎 ' + fileInfo.filename,
@@ -132,7 +140,6 @@ async function sendToDiscord(channelId, username, content, fileInfo = null) {
     } else {
       body.content = content;
     }
-
     await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -142,6 +149,11 @@ async function sendToDiscord(channelId, username, content, fileInfo = null) {
     console.error('Discord webhook error:', err.message);
   }
 }
+
+// ── REST: Health check ────────────────────────────────────────────
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', mongo: usersCol ? 'connected' : 'in-memory' });
+});
 
 // ── REST: Auth ────────────────────────────────────────────────────
 app.post('/api/register', async (req, res) => {
@@ -160,33 +172,29 @@ app.post('/api/register', async (req, res) => {
     avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(username)}`,
     createdAt: new Date()
   };
-
   try {
-    await usersCol.insertOne(user);
+    await Users.insertOne(user);
   } catch (e) {
     if (e.code === 11000)
       return res.status(409).json({ error: 'Username already taken' });
     throw e;
   }
-
   const token = generateToken(user);
   res.json({ token, user: { id: user.id, username: user.username, avatar: user.avatar } });
 });
 
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
-  const user = await usersCol.findOne({ usernameLower: username?.toLowerCase() });
+  const user = await Users.findOne({ usernameLower: username?.toLowerCase() });
   if (!user) return res.status(401).json({ error: 'Invalid username or password' });
-
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) return res.status(401).json({ error: 'Invalid username or password' });
-
   const token = generateToken(user);
   res.json({ token, user: { id: user.id, username: user.username, avatar: user.avatar } });
 });
 
 app.get('/api/me', authMiddleware, async (req, res) => {
-  const user = await usersCol.findOne({ usernameLower: req.user.username.toLowerCase() });
+  const user = await Users.findOne({ usernameLower: req.user.username.toLowerCase() });
   if (!user) return res.status(404).json({ error: 'User not found' });
   res.json({ id: user.id, username: user.username, avatar: user.avatar });
 });
@@ -205,10 +213,9 @@ app.get('/api/channels/:id/messages', authMiddleware, (req, res) => {
 // ── REST: File Upload ─────────────────────────────────────────────
 app.post('/api/upload', authMiddleware, upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-  const fileUrl = `/uploads/${req.file.filename}`;
   res.json({
     filename:   req.file.originalname,
-    url:        fileUrl,
+    url:        `/uploads/${req.file.filename}`,
     mimetype:   req.file.mimetype,
     size:       req.file.size,
     uploadedBy: req.user.username,
@@ -233,34 +240,26 @@ io.on('connection', (socket) => {
     if (!channels[channelId]) return;
     const prev = onlineUsers[socket.id]?.channelId;
     if (prev) socket.leave(prev);
-
     socket.join(channelId);
     onlineUsers[socket.id].channelId = channelId;
-
     const sysMsg = buildMessage('system', `${socket.user.username} joined #${channelId}`, channelId, 'system');
     channels[channelId].messages.push(sysMsg);
     socket.to(channelId).emit('message', sysMsg);
   });
 
-  // テキストメッセージ → チャットに送信 + Discordへ転送
   socket.on('send_message', async ({ channelId, content }) => {
     if (!channels[channelId] || !content?.trim()) return;
     const msg = buildMessage(socket.user.username, content.trim(), channelId, 'text');
     channels[channelId].messages.push(msg);
     io.to(channelId).emit('message', msg);
-
-    // Discord へ転送
     await sendToDiscord(channelId, socket.user.username, content.trim());
   });
 
-  // ファイルメッセージ → チャットに送信 + Discordへ転送
   socket.on('send_file', async ({ channelId, fileInfo }) => {
     if (!channels[channelId] || !fileInfo) return;
     const msg = buildMessage(socket.user.username, fileInfo.filename, channelId, 'file', fileInfo);
     channels[channelId].messages.push(msg);
     io.to(channelId).emit('message', msg);
-
-    // Discord へ転送（ファイル情報をEmbedで）
     await sendToDiscord(channelId, socket.user.username, null, fileInfo);
   });
 
@@ -279,12 +278,9 @@ function buildMessage(author, content, channelId, type, fileInfo = null) {
   return { id: uuidv4(), author, content, channelId, type, fileInfo, timestamp: new Date().toISOString() };
 }
 
-// ── Start ─────────────────────────────────────────────────────────
-connectMongo().then(() => {
-  server.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-  });
-}).catch(err => {
-  console.error('Failed to connect to MongoDB:', err);
-  process.exit(1);
+// ── Start: サーバーを先に起動し、その後 MongoDB に接続 ──────────
+server.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  // MongoDB 接続はサーバー起動後に非同期で実行（失敗しても落ちない）
+  connectMongo().catch(err => console.error('connectMongo unexpected error:', err));
 });

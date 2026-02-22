@@ -783,13 +783,124 @@ html, body {
 .welcome-title { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
 .welcome-sub   { font-size: 15px; color: var(--text-3); }
 
-@media (max-width: 900px) {
-  .members-panel { display: none; }
+/* ═══════════════════════════════════════════════
+   Mobile Buttons
+═══════════════════════════════════════════════ */
+.mobile-menu-btn,
+.mobile-members-btn {
+  display: none;
+  width: 36px; height: 36px;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  border-radius: 8px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+  transition: background 0.15s;
 }
+.mobile-menu-btn:hover,
+.mobile-members-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-1);
+}
+
+/* ドロワー背景オーバーレイ */
+.drawer-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 200;
+  backdrop-filter: blur(2px);
+  animation: fadeIn 0.2s ease;
+}
+.drawer-overlay.open { display: block; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ═══════════════════════════════════════════════
+   Tablet (≤900px)
+═══════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .members-panel {
+    position: fixed;
+    right: 0; top: 0; bottom: 0;
+    z-index: 300;
+    width: 240px;
+    transform: translateX(100%);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: -8px 0 32px rgba(0,0,0,0.4);
+  }
+  .members-panel.open {
+    transform: translateX(0);
+  }
+  .mobile-members-btn {
+    display: flex;
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   Mobile (≤640px)
+═══════════════════════════════════════════════ */
 @media (max-width: 640px) {
   .server-list { display: none; }
-  :root { --sidebar-w: 0px; }
-  .sidebar { display: none; }
+
+  .sidebar {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    z-index: 300;
+    width: 280px;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 8px 0 32px rgba(0,0,0,0.4);
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .mobile-menu-btn {
+    display: flex;
+  }
+
+  .auth-card {
+    width: calc(100vw - 32px);
+    padding: 28px 20px;
+    border-radius: 16px;
+  }
+
+  .img-preview { max-width: 100%; }
+  .file-attachment { max-width: 100%; }
+
+  .chat-header-sep,
+  .chat-header-topic { display: none; }
+
+  .msg {
+    padding: 4px 10px;
+    gap: 10px;
+  }
+  .msg-avatar { width: 34px; height: 34px; }
+  .msg.system { padding-left: 54px; }
+
+  .input-bar { padding: 0 8px 12px; }
+
+  .upload-toast {
+    left: 16px;
+    right: 16px;
+    transform: translateY(10px);
+    min-width: unset;
+  }
+  .upload-toast.show { transform: translateY(0); }
+
+  .welcome-icon { width: 48px; height: 48px; font-size: 22px; }
+  .welcome-title { font-size: 18px; }
+}
+
+@media (max-width: 380px) {
+  .auth-logo-text { font-size: 20px; }
+  .auth-title { font-size: 18px; }
+  .msg-input { font-size: 14px; }
 }
 </style>
 </head>
@@ -872,10 +983,12 @@ html, body {
   <!-- Chat -->
   <div class="chat-area">
     <div class="chat-header">
+      <button class="mobile-menu-btn" onclick="toggleSidebar()" title="チャンネル一覧">☰</button>
       <span class="chat-header-icon">#</span>
       <span class="chat-header-name" id="chat-header-name">general</span>
       <div class="chat-header-sep"></div>
       <span class="chat-header-topic" id="chat-header-topic">みんなのチャンネルへようこそ！</span>
+      <button class="mobile-members-btn" onclick="toggleMembers()" title="メンバー一覧">👥</button>
     </div>
 
     <div class="messages" id="messages">
@@ -911,6 +1024,9 @@ html, body {
   </div>
 
 </div><!-- #app -->
+
+<!-- Drawer overlay (モバイル用サイドバー背景) -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawers()"></div>
 
 <!-- Drop overlay -->
 <div class="drop-overlay" id="drop-overlay">
@@ -1087,6 +1203,7 @@ function renderChannelList(channels) {
 }
 
 async function joinChannel(channelId) {
+  closeDrawers(); // モバイル: チャンネル切り替えでドロワーを閉じる
   // Update UI
   document.querySelectorAll('.ch-item').forEach(el => el.classList.remove('active'));
   const el = document.getElementById(`ch-${channelId}`);
@@ -1343,6 +1460,36 @@ function fileIcon(mimetype = '') {
   if (mimetype.includes('excel') || mimetype.includes('spreadsheet')) return '📊';
   return '📁';
 }
+
+// ════════════════════════════════════════
+// Mobile Drawer
+// ════════════════════════════════════════
+function toggleSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('drawer-overlay');
+  const isOpen  = sidebar.classList.toggle('open');
+  overlay.classList.toggle('open', isOpen);
+  // メンバーパネルは閉じる
+  document.querySelector('.members-panel')?.classList.remove('open');
+}
+
+function toggleMembers() {
+  const panel   = document.querySelector('.members-panel');
+  const overlay = document.getElementById('drawer-overlay');
+  const isOpen  = panel.classList.toggle('open');
+  overlay.classList.toggle('open', isOpen);
+  // サイドバーは閉じる
+  document.querySelector('.sidebar')?.classList.remove('open');
+}
+
+function closeDrawers() {
+  document.querySelector('.sidebar')?.classList.remove('open');
+  document.querySelector('.members-panel')?.classList.remove('open');
+  document.getElementById('drawer-overlay')?.classList.remove('open');
+}
+
+// チャンネル切り替え時にサイドバーを自動で閉じる（モバイル）
+const _origJoinChannel = typeof joinChannel !== 'undefined' ? joinChannel : null;
 
 // ════════════════════════════════════════
 // Auto-login if token exists

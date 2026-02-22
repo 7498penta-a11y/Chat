@@ -23,13 +23,87 @@ const MONGO_URI  = process.env.MONGO_URI  || '';
 const DB_NAME    = process.env.DB_NAME    || 'chatapp';
 
 // ── Discord Webhook ───────────────────────────────────────────────
+const CHANNEL_IDS = ['general', 'random', 'media', 'dev'];
+
 function getDiscordWebhook(channelId) {
-  return process.env[`DISCORD_WEBHOOK_${channelId}`] || process.env.DISCORD_WEBHOOK_DEFAULT || null;
+  return process.env[`DISCORD_WEBHOOK_${channelId}`]
+      || process.env.DISCORD_WEBHOOK_DEFAULT
+      || null;
+}
+
+function checkDiscordConfig() {
+  console.log('── Discord Webhook 設定確認 ──────────────────');
+  let anySet = false;
+  CHANNEL_IDS.forEach(ch => {
+    const url = process.env[`DISCORD_WEBHOOK_${ch}`];
+    if (url) {
+      console.log(`  ✅ #${ch}: ${url.substring(0, 50)}...`);
+      anySet = true;
+    } else {
+      console.log(`  ❌ #${ch}: 未設定 (DISCORD_WEBHOOK_${ch})`);
+    }
+  });
+  const def = process.env.DISCORD_WEBHOOK_DEFAULT;
+  if (def) {
+    console.log(`  ✅ DEFAULT: ${def.substring(0, 50)}...`);
+    anySet = true;
+  }
+  if (!anySet) {
+    console.warn('  ⚠️  Discord Webhook が1つも設定されていません。');
+    console.warn('     Render Environment Variables に DISCORD_WEBHOOK_general などを追加してください。');
+  }
+  console.log('─────────────────────────────────────────────');
+}
+
+async function sendToDiscord(channelId, username, content, fileInfo = null) {
+  const webhookUrl = getDiscordWebhook(channelId);
+  if (!webhookUrl) {
+    console.log(`[Discord] #${channelId}: Webhook未設定のためスキップ`);
+    return;
+  }
+
+  // SVGはDiscordが受け付けないためavatar_urlは省略
+  const body = {
+    username: `${username} (web#${channelId})`,
+  };
+
+  if (fileInfo) {
+    body.embeds = [{
+      title: '📎 ' + fileInfo.filename,
+      description: `**${username}** がファイルを送信しました`,
+      color: 0x5865F2,
+      footer: { text: `#${channelId} | NexusChat` },
+      timestamp: new Date().toISOString()
+    }];
+  } else {
+    body.content = content;
+  }
+
+  console.log(`[Discord] #${channelId} へ送信中... (user: ${username})`);
+
+  try {
+    const res = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    if (res.ok || res.status === 204) {
+      console.log(`[Discord] ✅ #${channelId} 送信成功 (status: ${res.status})`);
+    } else {
+      const errText = await res.text();
+      console.error(`[Discord] ❌ #${channelId} 送信失敗 (status: ${res.status})`);
+      console.error(`[Discord]    レスポンス: ${errText}`);
+      console.error(`[Discord]    Webhook URL先頭: ${webhookUrl.substring(0, 60)}...`);
+    }
+  } catch (err) {
+    console.error(`[Discord] ❌ fetch エラー: ${err.message}`);
+  }
 }
 
 // ── MongoDB + インメモリフォールバック ────────────────────────────
-let usersCol = null;          // null = MongoDB 未接続
-const inMemoryUsers = {};     // フォールバック用
+let usersCol = null;
+const inMemoryUsers = {};
 
 const Users = {
   async findOne(query) {
@@ -50,8 +124,7 @@ const Users = {
 
 async function connectMongo() {
   if (!MONGO_URI) {
-    console.warn('⚠️  MONGO_URI 未設定 → インメモリモードで起動（再起動でデータ消失）');
-    console.warn('   Render Environment Variables に MONGO_URI を追加してください。');
+    console.warn('⚠️  MONGO_URI 未設定 → インメモリモードで起動');
     return;
   }
   const client = new MongoClient(MONGO_URI, {
@@ -68,7 +141,6 @@ async function connectMongo() {
   } catch (err) {
     console.error('❌ MongoDB 接続失敗 → インメモリモードで続行');
     console.error('   原因:', err.message);
-    console.error('   確認: Atlas Network Access で 0.0.0.0/0 を許可しているか確認してください。');
     usersCol = null;
   }
 }
@@ -98,7 +170,6 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(UPLOADS_DIR));
 
-// index.html を public ではなくルートから配信
 app.get('/', (req, res) => {
   const f = path.join(__dirname, 'index.html');
   if (fs.existsSync(f)) res.sendFile(f);
@@ -121,38 +192,41 @@ function authMiddleware(req, res, next) {
   next();
 }
 
-// ── Discord Webhook 送信 ──────────────────────────────────────────
-async function sendToDiscord(channelId, username, content, fileInfo = null) {
+// ── REST: Health / Discord テスト ─────────────────────────────────
+app.get('/health', (req, res) => {
+  const webhooks = {};
+  CHANNEL_IDS.forEach(ch => {
+    webhooks[ch] = !!getDiscordWebhook(ch);
+  });
+  res.json({ status: 'ok', mongo: usersCol ? 'connected' : 'in-memory', discord_webhooks: webhooks });
+});
+
+// Discord疎通テスト用エンドポイント（認証不要・開発用）
+app.post('/api/discord-test', async (req, res) => {
+  const { channelId = 'general', message = 'NexusChat テスト送信 🚀' } = req.body;
   const webhookUrl = getDiscordWebhook(channelId);
-  if (!webhookUrl) return;
+  if (!webhookUrl) {
+    return res.status(400).json({
+      error: `DISCORD_WEBHOOK_${channelId} が設定されていません`,
+      hint: 'Render の Environment Variables を確認してください'
+    });
+  }
   try {
-    const body = {
-      username: `${username} (${channelId})`,
-      avatar_url: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(username)}`,
-    };
-    if (fileInfo) {
-      body.embeds = [{
-        title: '📎 ' + fileInfo.filename,
-        url: fileInfo.url,
-        color: 0x5865F2,
-        footer: { text: `#${channelId}` }
-      }];
-    } else {
-      body.content = content;
-    }
-    await fetch(webhookUrl, {
+    const r = await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      body: JSON.stringify({ username: 'NexusChat テスト', content: message })
     });
+    const status = r.status;
+    if (status === 204 || r.ok) {
+      res.json({ success: true, status, message: 'Discordへの送信成功！' });
+    } else {
+      const body = await r.text();
+      res.status(500).json({ success: false, status, discord_response: body });
+    }
   } catch (err) {
-    console.error('Discord webhook error:', err.message);
+    res.status(500).json({ success: false, error: err.message });
   }
-}
-
-// ── REST: Health check ────────────────────────────────────────────
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', mongo: usersCol ? 'connected' : 'in-memory' });
 });
 
 // ── REST: Auth ────────────────────────────────────────────────────
@@ -252,7 +326,8 @@ io.on('connection', (socket) => {
     const msg = buildMessage(socket.user.username, content.trim(), channelId, 'text');
     channels[channelId].messages.push(msg);
     io.to(channelId).emit('message', msg);
-    await sendToDiscord(channelId, socket.user.username, content.trim());
+    // Discord転送（非同期・失敗してもチャットには影響しない）
+    sendToDiscord(channelId, socket.user.username, content.trim()).catch(() => {});
   });
 
   socket.on('send_file', async ({ channelId, fileInfo }) => {
@@ -260,7 +335,7 @@ io.on('connection', (socket) => {
     const msg = buildMessage(socket.user.username, fileInfo.filename, channelId, 'file', fileInfo);
     channels[channelId].messages.push(msg);
     io.to(channelId).emit('message', msg);
-    await sendToDiscord(channelId, socket.user.username, null, fileInfo);
+    sendToDiscord(channelId, socket.user.username, null, fileInfo).catch(() => {});
   });
 
   socket.on('typing', ({ channelId, isTyping }) => {
@@ -278,9 +353,9 @@ function buildMessage(author, content, channelId, type, fileInfo = null) {
   return { id: uuidv4(), author, content, channelId, type, fileInfo, timestamp: new Date().toISOString() };
 }
 
-// ── Start: サーバーを先に起動し、その後 MongoDB に接続 ──────────
+// ── Start ─────────────────────────────────────────────────────────
 server.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
-  // MongoDB 接続はサーバー起動後に非同期で実行（失敗しても落ちない）
-  connectMongo().catch(err => console.error('connectMongo unexpected error:', err));
+  checkDiscordConfig(); // 起動時にDiscord設定を確認
+  connectMongo().catch(err => console.error('connectMongo error:', err));
 });

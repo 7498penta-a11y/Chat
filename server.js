@@ -368,6 +368,19 @@ io.on('connection', (socket) => {
     sendToDiscord(channelId, socket.user.username, null, fileInfo).catch(() => {});
   });
 
+  socket.on('add_reaction', ({ msgId, emoji, channelId }) => {
+    if (!channels[channelId] || !msgId || !emoji) return;
+    const msg = channels[channelId].messages.find(m => m.id === msgId);
+    if (!msg) return;
+    if (!msg.reactions) msg.reactions = {};
+    if (!msg.reactions[emoji]) msg.reactions[emoji] = [];
+    const users = msg.reactions[emoji];
+    const idx = users.indexOf(socket.user.username);
+    if (idx === -1) { users.push(socket.user.username); }
+    else { users.splice(idx, 1); if (users.length === 0) delete msg.reactions[emoji]; }
+    io.to(channelId).emit('reaction_update', { msgId, reactions: msg.reactions });
+  });
+
   socket.on('typing', ({ channelId, isTyping }) => {
     socket.to(channelId).emit('typing', { username: socket.user.username, isTyping });
   });

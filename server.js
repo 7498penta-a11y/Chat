@@ -190,6 +190,10 @@ async function connectMongo() {
     await messagesCol.createIndex({ channelId: 1, timestamp: 1 });
     await dmsCol.createIndex({ roomId: 1, timestamp: 1 });
     await pinsCol.createIndex({ channelId: 1 });
+
+    // 既存のシステムメッセージをDBから削除（増殖問題の根治）
+    const deleted = await messagesCol.deleteMany({ type: 'system' });
+    if (deleted.deletedCount > 0) console.log(`🧹 システムメッセージ ${deleted.deletedCount} 件をDBから削除`);\
     console.log('✅ MongoDB connected');
   } catch (err) {
     console.error('❌ MongoDB 接続失敗 → インメモリ続行:', err.message);
@@ -292,6 +296,9 @@ app.get('/api/channels/:id/messages', authMiddleware, async (req, res) => {
   if (!ch) return res.status(404).json({ error: 'Channel not found' });
   const limit = Math.min(parseInt(req.query.limit) || 50, 100);
 
+  // システムメッセージを除外するフィルター
+  const filterSystem = msgs => msgs.filter(m => m.type !== 'system');
+
   const discordHistory = await fetchDiscordHistory(channelId, limit);
   if (discordHistory && discordHistory.length > 0) {
     const existingIds = new Set(ch.messages.map(m => m.id));
@@ -301,14 +308,15 @@ app.get('/api/channels/:id/messages', authMiddleware, async (req, res) => {
         if (messagesCol) messagesCol.updateOne({ id: msg.id }, { $setOnInsert: msg }, { upsert: true }).catch(() => {});
       }
     }
-    return res.json([...ch.messages].sort((a,b) => new Date(a.timestamp)-new Date(b.timestamp)).slice(-limit));
+    return res.json(filterSystem([...ch.messages].sort((a,b) => new Date(a.timestamp)-new Date(b.timestamp))).slice(-limit));
   }
 
   if (messagesCol) {
-    const msgs = await messagesCol.find({ channelId }).sort({ timestamp: 1 }).limit(limit).toArray();
+    // MongoDB からはシステムメッセージを除外して取得
+    const msgs = await messagesCol.find({ channelId, type: { $ne: 'system' } }).sort({ timestamp: 1 }).limit(limit).toArray();
     if (msgs.length > 0) return res.json(msgs);
   }
-  res.json(ch.messages.slice(-limit));
+  res.json(filterSystem(ch.messages).slice(-limit));
 });
 
 app.get('/api/channels/:id/pins', authMiddleware, async (req, res) => {
@@ -406,7 +414,14 @@ io.on('connection', async (socket) => {
   socket.on('join_channel', (channelId) => {
     if (!channels[channelId]) return;
     const prev = onlineUsers[socket.id]?.channelId;
-    if (prev && prev !== channelId) {
+
+    // 同じチャンネルへの再参加（再接続）は通知なしでルームだけ再登録
+    if (prev === channelId) {
+      socket.join(channelId);
+      return;
+    }
+
+    if (prev) {
       socket.leave(prev);
       // 退出通知は履歴に保存せずリアルタイムのみ
       const leftMsg = buildMsg('system', `${socket.user.username} が退出しました`, prev, 'system');

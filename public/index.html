@@ -686,7 +686,14 @@ async function initApp() {
   renderDmList();
 
   socket = io({auth:{token}});
-  socket.on('connect', ()=>joinChannel(currentChannel));
+  // 初回接続時のみ joinChannel（履歴ロード含む）を実行
+  socket.once('connect', ()=>joinChannel(currentChannel));
+  // 再接続時はチャンネルルームへの再参加のみ（履歴の再ロードや参加通知は不要）
+  socket.on('reconnect', ()=>{
+    if (currentChannelType === 'text' && currentChannel) {
+      socket.emit('join_channel', currentChannel);
+    }
+  });
 
   socket.on('message', (msg)=>{
     if(!allMessages[msg.channelId]) allMessages[msg.channelId]=[];
@@ -738,13 +745,24 @@ async function initApp() {
     playNotifSound();
   });
 
+
   // WebRTC シグナリング
-  socket.on('voice_joined',({channelId,existingUsers})=>{existingUsers.forEach(u=>startPeerConnection(u.socketId,true));});
-  socket.on('voice_user_joined',async({socketId})=>{await startPeerConnection(socketId,false);});
-  socket.on('voice_user_left',({socketId})=>{if(peerConnections[socketId]){peerConnections[socketId].close();delete peerConnections[socketId];}updateVoicePanel();});
-  socket.on('voice_offer',async({from,offer,username})=>{const pc=await getOrCreatePC(from);await pc.setRemoteDescription(new RTCSessionDescription(offer));const answer=await pc.createAnswer();await pc.setLocalDescription(answer);socket.emit('voice_answer',{to:from,answer});});
-  socket.on('voice_answer',async({from,answer})=>{const pc=peerConnections[from];if(pc)await pc.setRemoteDescription(new RTCSessionDescription(answer));});
-  socket.on('voice_ice',async({from,candidate})=>{const pc=peerConnections[from];if(pc&&candidate)await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(()=>{});});
+  socket.on('voice_joined', ({channelId, existingUsers}) => {
+    // 既にいた人たち全員に対して自分がOfferを送る
+    existingUsers.forEach(u => startPeerConnection(u.socketId, true));
+  });
+  socket.on('voice_user_joined', async ({socketId}) => {
+    // 新しく来た人には相手側がOfferを送ってくるので待つ（isInitiator=false）
+    await startPeerConnection(socketId, false);
+  });
+  socket.on('voice_user_left', ({socketId}) => {
+    closePeer(socketId);
+    updateVoicePanel();
+  });
+  socket.on('voice_offer',  async ({from, offer})     => { await handleVoiceOffer(from, offer); });
+  socket.on('voice_answer', async ({from, answer})    => { await handleVoiceAnswer(from, answer); });
+  socket.on('voice_ice',    async ({from, candidate}) => { await handleVoiceIce(from, candidate); });
+
 
   // ロール変更
   socket.on('role_changed',({role})=>{currentUser.role=role;document.getElementById('user-role-tag').textContent=role;if(role==='admin')document.getElementById('admin-btn').style.display='';});
@@ -877,6 +895,21 @@ function updateVoiceView(voiceState) {
   document.getElementById('voice-join-btn').style.display = currentVoiceChannel === currentChannel ? 'none' : '';
 }
 
+// ══════════════════════════ VOICE / WebRTC ══════════════════════════════
+
+// ICE candidate キュー（remoteDescription設定前に届いたものを貯める）
+const iceCandidateQueues = {}; // { socketId: [candidate,...] }
+// 再生中のAudio要素管理
+const remoteAudioEls = {};    // { socketId: HTMLAudioElement }
+
+const ICE_SERVERS = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+  ]
+};
+
 async function joinVoiceFromView() {
   currentVoiceChannel = currentChannel;
   document.getElementById('voice-panel').classList.add('active');
@@ -901,12 +934,29 @@ async function startLocalAudio() {
 function leaveVoice() {
   if (!currentVoiceChannel) return;
   socket.emit('leave_voice');
-  Object.values(peerConnections).forEach(pc=>pc.close());
-  peerConnections = {};
+  // 全PeerConnectionを閉じる
+  Object.keys(peerConnections).forEach(sid => closePeer(sid));
   if (localStream) { localStream.getTracks().forEach(t=>t.stop()); localStream = null; }
   currentVoiceChannel = null;
+  isMuted = false;
   document.getElementById('voice-panel').classList.remove('active');
+  document.getElementById('mute-btn').textContent = '🎤 ミュート';
+  document.getElementById('mute-btn').classList.remove('muted');
   if (currentChannelType === 'voice') document.getElementById('voice-join-btn').style.display = '';
+}
+
+function closePeer(socketId) {
+  if (peerConnections[socketId]) {
+    peerConnections[socketId].close();
+    delete peerConnections[socketId];
+  }
+  if (remoteAudioEls[socketId]) {
+    remoteAudioEls[socketId].pause();
+    remoteAudioEls[socketId].srcObject = null;
+    remoteAudioEls[socketId].remove();
+    delete remoteAudioEls[socketId];
+  }
+  delete iceCandidateQueues[socketId];
 }
 
 function toggleMute() {
@@ -924,29 +974,119 @@ function updateVoicePanel() {
     `<div class="voice-participant">🎙 ${escHtml(u.username)}</div>`).join('');
 }
 
-// WebRTC
-async function startPeerConnection(targetSocketId, isInitiator) {
-  const pc = await getOrCreatePC(targetSocketId);
-  if (localStream) localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
-  if (isInitiator) {
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    socket.emit('voice_offer',{to:targetSocketId,offer});
+// ── WebRTC コア ──────────────────────────────────────────────────────────
+
+function createPC(socketId) {
+  const pc = new RTCPeerConnection(ICE_SERVERS);
+  peerConnections[socketId] = pc;
+  iceCandidateQueues[socketId] = [];
+
+  // ローカル音声トラックを追加
+  if (localStream) {
+    localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
   }
+
+  // ICE candidate をシグナリングサーバー経由で相手に送る
+  pc.onicecandidate = e => {
+    if (e.candidate) {
+      socket.emit('voice_ice', { to: socketId, candidate: e.candidate });
+    }
+  };
+
+  pc.onconnectionstatechange = () => {
+    console.log(`[WebRTC] ${socketId} → ${pc.connectionState}`);
+    if (pc.connectionState === 'failed') {
+      console.warn('[WebRTC] 接続失敗。再試行...');
+      closePeer(socketId);
+    }
+  };
+
+  // リモート音声を再生（ソケットIDごとに1つのAudio要素を管理）
+  pc.ontrack = e => {
+    if (!remoteAudioEls[socketId]) {
+      const audio = new Audio();
+      audio.autoplay = true;
+      document.body.appendChild(audio);
+      remoteAudioEls[socketId] = audio;
+    }
+    const audio = remoteAudioEls[socketId];
+    if (audio.srcObject !== e.streams[0]) {
+      audio.srcObject = e.streams[0];
+      audio.play().catch(err => console.warn('[Audio] 再生失敗:', err.message));
+    }
+  };
+
   return pc;
 }
 
-async function getOrCreatePC(socketId) {
-  if (peerConnections[socketId]) return peerConnections[socketId];
-  const pc = new RTCPeerConnection({ iceServers:[{urls:'stun:stun.l.google.com:19302'}] });
-  peerConnections[socketId] = pc;
-  pc.onicecandidate = e=>{if(e.candidate)socket.emit('voice_ice',{to:socketId,candidate:e.candidate});};
-  pc.ontrack = e=>{
-    const audio = new Audio();
-    audio.srcObject = e.streams[0];
-    audio.play().catch(()=>{});
-  };
-  return pc;
+async function flushIceCandidates(socketId) {
+  const queue = iceCandidateQueues[socketId] || [];
+  const pc = peerConnections[socketId];
+  if (!pc) return;
+  for (const candidate of queue) {
+    await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(err =>
+      console.warn('[ICE] candidate追加失敗:', err.message));
+  }
+  iceCandidateQueues[socketId] = [];
+}
+
+// 自分が Initiator（先にいた人へ Offer を送る）
+async function startPeerConnection(targetSocketId, isInitiator) {
+  if (peerConnections[targetSocketId]) return; // 既に接続済み
+  const pc = createPC(targetSocketId);
+
+  if (isInitiator) {
+    try {
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      socket.emit('voice_offer', { to: targetSocketId, offer });
+    } catch (err) {
+      console.error('[WebRTC] Offer作成失敗:', err);
+    }
+  }
+}
+
+// Offer 受信 → Answer を返す
+async function handleVoiceOffer(from, offer) {
+  if (!peerConnections[from]) {
+    createPC(from);
+  }
+  const pc = peerConnections[from];
+  try {
+    await pc.setRemoteDescription(new RTCSessionDescription(offer));
+    await flushIceCandidates(from);
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    socket.emit('voice_answer', { to: from, answer });
+  } catch (err) {
+    console.error('[WebRTC] Answer作成失敗:', err);
+  }
+}
+
+// Answer 受信
+async function handleVoiceAnswer(from, answer) {
+  const pc = peerConnections[from];
+  if (!pc) return;
+  try {
+    await pc.setRemoteDescription(new RTCSessionDescription(answer));
+    await flushIceCandidates(from);
+  } catch (err) {
+    console.error('[WebRTC] Answer設定失敗:', err);
+  }
+}
+
+// ICE candidate 受信
+async function handleVoiceIce(from, candidate) {
+  const pc = peerConnections[from];
+  if (!pc || !candidate) return;
+  // remoteDescriptionが未設定ならキューに積む
+  if (!pc.remoteDescription || !pc.remoteDescription.type) {
+    if (!iceCandidateQueues[from]) iceCandidateQueues[from] = [];
+    iceCandidateQueues[from].push(candidate);
+    return;
+  }
+  await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(err =>
+    console.warn('[ICE] candidate追加失敗:', err.message));
 }
 
 // ════════════════════════════════ MESSAGES ═════════════════════════════

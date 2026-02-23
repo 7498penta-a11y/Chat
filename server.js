@@ -414,24 +414,10 @@ io.on('connection', async (socket) => {
   socket.on('join_channel', (channelId) => {
     if (!channels[channelId]) return;
     const prev = onlineUsers[socket.id]?.channelId;
-
-    // 同じチャンネルへの再参加（再接続）は通知なしでルームだけ再登録
-    if (prev === channelId) {
-      socket.join(channelId);
-      return;
-    }
-
-    if (prev) {
-      socket.leave(prev);
-      // 退出通知は履歴に保存せずリアルタイムのみ
-      const leftMsg = buildMsg('system', `${socket.user.username} が退出しました`, prev, 'system');
-      socket.to(prev).emit('message', leftMsg);
-    }
+    if (prev) socket.leave(prev);
     socket.join(channelId);
     onlineUsers[socket.id].channelId = channelId;
-    // 参加通知は履歴に保存せず、他のユーザーへのリアルタイム通知のみ
-    const sys = buildMsg('system', `${socket.user.username} が参加しました`, channelId, 'system');
-    socket.to(channelId).emit('message', sys);
+    // 参加・退出の通知は一切送らない（増殖・うるさい問題の根治）
   });
 
   // メッセージ送信

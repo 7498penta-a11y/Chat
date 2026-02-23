@@ -350,6 +350,43 @@ kbd{background:var(–bg-panel);border:1px solid var(–border);border-radius:4p
 .welcome-icon{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(–accent),var(–accent-2));display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:16px;}
 .welcome-title{font-size:24px;font-weight:700;margin-bottom:6px;}
 .welcome-sub{font-size:15px;color:var(–text-3);}
+
+/* ─── OGP プレビュー ─── */
+.ogp-card{display:flex;gap:0;background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);margin-top:8px;max-width:440px;overflow:hidden;text-decoration:none;transition:border-color 0.2s;cursor:pointer;}
+.ogp-card:hover{border-color:var(--accent);}
+.ogp-card-accent{width:4px;background:var(--accent);flex-shrink:0;}
+.ogp-card-body{padding:12px;flex:1;min-width:0;}
+.ogp-card-site{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
+.ogp-card-title{font-size:14px;font-weight:600;color:var(--text-1);margin-bottom:4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.ogp-card-desc{font-size:12px;color:var(--text-3);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.ogp-card-img{width:80px;min-width:80px;height:80px;object-fit:cover;flex-shrink:0;}
+
+/* ─── ボイスチャンネル ─── */
+.voice-panel{position:fixed;bottom:60px;left:72px;width:var(--sidebar-w);background:var(--bg-void);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px;z-index:1500;box-shadow:0 8px 32px rgba(0,0,0,0.5);display:none;}
+.voice-panel.open{display:block;}
+.voice-panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.voice-panel-title{font-size:12px;font-weight:700;color:var(--green);display:flex;align-items:center;gap:6px;}
+.voice-panel-title::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite;}
+.voice-channel-name{font-size:11px;color:var(--text-3);margin-bottom:8px;}
+.voice-participants{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
+.voice-participant{display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:6px;font-size:13px;}
+.voice-participant.speaking{background:rgba(59,165,93,0.15);}
+.voice-participant-dot{width:8px;height:8px;border-radius:50%;background:var(--text-muted);flex-shrink:0;}
+.voice-participant.speaking .voice-participant-dot{background:var(--green);}
+.voice-controls{display:flex;gap:6px;}
+.voice-ctrl-btn{flex:1;padding:8px;border:none;border-radius:var(--radius);font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;}
+.voice-mute-btn{background:rgba(250,166,26,0.15);color:var(--yellow);}
+.voice-mute-btn:hover{background:rgba(250,166,26,0.3);}
+.voice-mute-btn.muted{background:rgba(237,66,69,0.2);color:var(--red);}
+.voice-leave-btn{background:rgba(237,66,69,0.15);color:var(--red);}
+.voice-leave-btn:hover{background:rgba(237,66,69,0.3);}
+.ch-voice-item{display:flex;align-items:center;gap:8px;padding:5px 8px 5px 16px;margin:1px 8px;border-radius:6px;cursor:pointer;color:var(--text-3);font-size:14px;font-weight:500;transition:all 0.15s;position:relative;}
+.ch-voice-item:hover{background:var(--bg-hover);color:var(--text-2);}
+.ch-voice-item.active{background:var(--bg-active);color:var(--green);}
+.ch-voice-users{display:flex;flex-direction:column;padding-left:40px;gap:1px;}
+.ch-voice-user{font-size:12px;color:var(--text-3);padding:2px 8px;display:flex;align-items:center;gap:6px;}
+.voice-status-dot{width:6px;height:6px;border-radius:50%;background:var(--green);}
+
 *{scrollbar-width:thin;scrollbar-color:var(–bg-hover) transparent;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
 
@@ -444,6 +481,11 @@ kbd{background:var(–bg-panel);border:1px solid var(–border);border-radius:4p
         <button class="ch-category-btn" id="add-channel-btn" onclick="openChannelCreate()" style="display:none" title="チャンネルを作成">＋</button>
       </div>
       <div id="channel-list"></div>
+
+      <div class="ch-category" style="margin-top:4px">
+        ボイスチャンネル
+      </div>
+      <div id="voice-channel-list"></div>
       <div class="ch-category" style="margin-top:8px">
         ダイレクトメッセージ
         <button class="ch-category-btn" onclick="openDmSearch()" title="新しいDM">＋</button>
@@ -538,6 +580,20 @@ kbd{background:var(–bg-panel);border:1px solid var(–border);border-radius:4p
   <div class="members-panel" id="members-panel">
     <div class="members-header">メンバー — <span id="online-count">0</span>名</div>
     <div id="members-list"></div>
+  </div>
+</div>
+
+
+<!-- ボイスチャンネルパネル -->
+<div class="voice-panel" id="voice-panel">
+  <div class="voice-panel-header">
+    <div class="voice-panel-title">🔊 接続中</div>
+    <span id="voice-panel-channel" style="font-size:11px;color:var(--text-3)"></span>
+  </div>
+  <div class="voice-participants" id="voice-participants-list"></div>
+  <div class="voice-controls">
+    <button class="voice-ctrl-btn voice-mute-btn" id="voice-mute-btn" onclick="toggleVoiceMute()">🎤 ミュート</button>
+    <button class="voice-ctrl-btn voice-leave-btn" onclick="leaveVoiceChannel()">📵 退出</button>
   </div>
 </div>
 
@@ -838,6 +894,7 @@ await loadCurrentUser();
 initSocket();
 await loadChannels();
 renderDmList();
+renderVoiceChannelList();
 initDragDrop();
 initMobile();
 document.addEventListener(‘click’, () => document.getElementById(‘status-menu’).style.display = ‘none’, true);
@@ -866,6 +923,7 @@ document.getElementById(‘add-channel-btn’).style.display = ‘’;
 function initSocket() {
 socket = io({ auth: { token } });
 socket.on(‘connect’, () => console.log(‘Socket connected’));
+initVoiceSocketEvents();
 socket.on(‘connect_error’, (e) => { if (e.message === ‘Authentication error’) { logout(); } });
 socket.on(‘force_logout’, ({ reason }) => { alert(reason); logout(); });
 socket.on(‘muted’, () => { isMutedLocally = true; document.getElementById(‘muted-banner’).classList.add(‘show’); });
@@ -1064,6 +1122,7 @@ el.dataset.timestamp = msg.timestamp;
 el.dataset.type = msg.type;
 
 let contentHtml = ‘’;
+let msgUrls = [];
 if (msg.type === ‘file’ && msg.fileInfo) {
 const fi = msg.fileInfo;
 const isImage = fi.mimetype?.startsWith(‘image/’) || /.(png|jpe?g|gif|webp)$/i.test(fi.filename || ‘’);
@@ -1073,7 +1132,9 @@ contentHtml = `<img class="img-preview" src="${escHtml(fi.url)}" alt="${escHtml(
 contentHtml = `<a class="file-attachment" href="${escHtml(fi.url)}" target="_blank" download="${escHtml(fi.filename)}"> <div class="file-icon">📎</div> <div class="file-info"><div class="file-name">${escHtml(fi.filename)}</div><div class="file-size">${formatBytes(fi.size)}</div></div> </a>`;
 }
 } else {
-contentHtml = renderContent(msg.content || ‘’);
+const _rendered = renderContent(msg.content || ‘’);
+contentHtml = _rendered.html;
+msgUrls = _rendered.urls || [];
 }
 
 const threadInfo = msg.threadOf ? `<div style="font-size:12px;color:var(--text-3);margin-bottom:3px">↩ スレッド返信</div>` : ‘’;
@@ -1084,6 +1145,11 @@ if (msg.reactions && Object.keys(msg.reactions).length > 0) renderReactions(el, 
 
 if (append) msgEl.appendChild(el);
 else msgEl.appendChild(el);
+
+// OGP プレビュー
+if (msgUrls.length > 0) {
+  msgUrls.forEach(url => fetchAndRenderOgp(el, url));
+}
 }
 
 function renderReactions(el, msgId, reactions, channelId) {
@@ -1691,19 +1757,24 @@ if (settings.notif && document.hidden) { try { new Notification(String(title), {
 
 // ════ HELPERS ════
 function renderContent(text) {
-if (!text) return ‘’;
+if (!text) return { html: '', urls: [] };
+const urlRegex = /https?:\/\/[^\s<>"'\)\]]+/g;
+const urls = [...(text.matchAll(urlRegex))].map(m => m[0]);
 let t = escHtml(text);
-t = t.replace(/**(.+?)**/g, ‘<strong>$1</strong>’);
-t = t.replace(/*(.+?)*/g, ‘<em>$1</em>’);
-t = t.replace(/`(.+?)`/g, ‘<code style="background:var(--bg-panel);padding:1px 5px;border-radius:4px;font-family:var(--font-mono);font-size:13px">$1</code>’);
-t = t.replace(/@(\w+)/g, ‘<span class="mention">@$1</span>’);
-t = t.replace(/\n/g, ‘<br>’);
-// カスタム絵文字
+t = t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+t = t.replace(/\*(.+?)\*/g, '<em>$1</em>');
+t = t.replace(/`(.+?)`/g, '<code style="background:var(--bg-panel);padding:1px 5px;border-radius:4px;font-family:var(--font-mono);font-size:13px">$1</code>');
+t = t.replace(/@(\w+)/g, '<span class="mention">@$1</span>');
+t = t.replace(/https?:\/\/[^\s<>"'&\)\]]+/g, (url) => {
+  const clean = url.replace(/&amp;/g, '&');
+  return `<a href="${clean}" target="_blank" rel="noopener noreferrer" style="color:var(--accent);text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${url}</a>`;
+});
+t = t.replace(/\n/g, '<br>');
 t = t.replace(/:([a-z0-9_]+):/g, (m, name) => {
 const ce = customEmojiList.find(e => e.name === name);
 return ce ? `<img src="${escHtml(ce.url)}" class="custom-emoji-img" title=":${escHtml(name)}:" />` : m;
 });
-return t;
+return { html: t, urls: urls.slice(0, 2) };
 }
 function escHtml(s) { return String(s || ‘’).replace(/&/g,’&’).replace(/</g,’<’).replace(/>/g,’>’).replace(/”/g,’"’).replace(/’/g,’'’); }
 function formatTime(ts) { const d = new Date(ts); return d.toLocaleString(‘ja-JP’, { month:‘short’, day:‘numeric’, hour:‘2-digit’, minute:‘2-digit’ }); }
@@ -1735,6 +1806,229 @@ const dy = Math.abs(e.changedTouches[0].clientY - ty);
 if (dx > 60 && dy < 60 && tx < 30) toggleSidebar();
 else if (dx < -60 && dy < 60) closeDrawers();
 }, { passive: true });
+}
+
+
+// ════ OGP プレビュー ════
+const ogpFetched = new Set();
+async function fetchAndRenderOgp(msgEl, url) {
+  if (ogpFetched.has(url)) return;
+  ogpFetched.add(url);
+  try {
+    const r = await fetch(`/api/ogp?url=${encodeURIComponent(url)}`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!r.ok) return;
+    const ogp = await r.json();
+    if (!ogp || !ogp.title) return;
+    const card = document.createElement(‘a’);
+    card.href = ogp.url || url;
+    card.target = ‘_blank’;
+    card.rel = ‘noopener noreferrer’;
+    card.className = ‘ogp-card’;
+    card.innerHTML = `
+      <div class="ogp-card-accent"></div>
+      <div class="ogp-card-body">
+        <div class="ogp-card-site">${escHtml(ogp.siteName || ‘’)}</div>
+        <div class="ogp-card-title">${escHtml(ogp.title || ‘’)}</div>
+        ${ogp.description ? `<div class="ogp-card-desc">${escHtml(ogp.description)}</div>` : ‘’}
+      </div>
+      ${ogp.image ? `<img class="ogp-card-img" src="${escHtml(ogp.image)}" alt="" onerror="this.style.display='none'" loading="lazy" />` : ‘’}
+    `;
+    const body = msgEl.querySelector(‘.msg-body’);
+    if (body) body.appendChild(card);
+  } catch(e) {}
+}
+
+// ════ ボイスチャンネル ════
+const VOICE_CHANNELS = [
+  { id: ‘voice-general’, name: ‘General’ },
+  { id: ‘voice-music’, name: ‘Music’ },
+  { id: ‘voice-gaming’, name: ‘Gaming’ },
+];
+const STUN_SERVERS = { iceServers: [{ urls: ‘stun:stun.l.google.com:19302’ }, { urls: ‘stun:stun1.l.google.com:19302’ }] };
+
+let currentVoiceChannel = null;
+let localStream = null;
+let peerConnections = {};  // socketId → RTCPeerConnection
+let voiceIsMuted = false;
+let voiceStateMap = {};  // roomId → [{ socketId, username }]
+
+function renderVoiceChannelList() {
+  const list = document.getElementById(‘voice-channel-list’);
+  if (!list) return;
+  list.innerHTML = VOICE_CHANNELS.map(vc => {
+    const users = voiceStateMap[vc.id] || [];
+    const isActive = currentVoiceChannel === vc.id;
+    return `<div class="ch-voice-item${isActive ? ‘ active’ : ‘’}" onclick="joinVoiceChannel('${vc.id}')">
+      <span style="font-size:14px">🔊</span>
+      <span style="flex:1">${escHtml(vc.name)}</span>
+      ${users.length > 0 ? `<span style="font-size:11px;color:var(--green);font-weight:600">${users.length}</span>` : ‘’}
+    </div>
+    ${users.length > 0 ? `<div class="ch-voice-users">${users.map(u => `<div class="ch-voice-user"><div class="voice-status-dot"></div>${escHtml(u.username)}</div>`).join(‘’)}</div>` : ‘’}`;
+  }).join(‘’);
+}
+
+async function joinVoiceChannel(roomId) {
+  if (currentVoiceChannel === roomId) return;
+  if (currentVoiceChannel) await leaveVoiceChannel();
+
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+  } catch(e) {
+    alert(‘マイクへのアクセスが拒否されました
+設定からマイクの許可をしてください’);
+    return;
+  }
+
+  currentVoiceChannel = roomId;
+  voiceIsMuted = false;
+  const vc = VOICE_CHANNELS.find(v => v.id === roomId);
+  document.getElementById(‘voice-panel-channel’).textContent = vc ? `#${vc.name}` : roomId;
+  document.getElementById(‘voice-panel’).classList.add(‘open’);
+  document.getElementById(‘voice-mute-btn’).textContent = ‘🎤 ミュート’;
+  document.getElementById(‘voice-mute-btn’).classList.remove(‘muted’);
+
+  renderVoiceChannelList();
+  socket.emit(‘voice_join’, { roomId });
+}
+
+async function leaveVoiceChannel() {
+  if (!currentVoiceChannel) return;
+  const roomId = currentVoiceChannel;
+  currentVoiceChannel = null;
+
+  // Close all peer connections
+  Object.values(peerConnections).forEach(pc => pc.close());
+  peerConnections = {};
+
+  // Stop local stream
+  if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+
+  // Remove audio elements
+  document.querySelectorAll(‘.remote-audio’).forEach(el => el.remove());
+
+  socket.emit(‘voice_leave’, { roomId });
+  document.getElementById(‘voice-panel’).classList.remove(‘open’);
+  renderVoiceChannelList();
+  updateVoiceParticipants();
+}
+
+function toggleVoiceMute() {
+  voiceIsMuted = !voiceIsMuted;
+  if (localStream) {
+    localStream.getAudioTracks().forEach(t => t.enabled = !voiceIsMuted);
+  }
+  const btn = document.getElementById(‘voice-mute-btn’);
+  btn.textContent = voiceIsMuted ? ‘🔇 ミュート中’ : ‘🎤 ミュート’;
+  btn.classList.toggle(‘muted’, voiceIsMuted);
+}
+
+async function createPeerConnection(toSocketId, isInitiator) {
+  const pc = new RTCPeerConnection(STUN_SERVERS);
+  peerConnections[toSocketId] = pc;
+
+  if (localStream) {
+    localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+  }
+
+  pc.ontrack = (e) => {
+    let audio = document.getElementById(`remote-audio-${toSocketId}`);
+    if (!audio) {
+      audio = document.createElement(‘audio’);
+      audio.id = `remote-audio-${toSocketId}`;
+      audio.className = ‘remote-audio’;
+      audio.autoplay = true;
+      document.body.appendChild(audio);
+    }
+    audio.srcObject = e.streams[0];
+  };
+
+  pc.onicecandidate = (e) => {
+    if (e.candidate) {
+      socket.emit(‘voice_ice’, { toSocketId, candidate: e.candidate });
+    }
+  };
+
+  pc.onconnectionstatechange = () => {
+    if ([‘disconnected’,‘failed’,‘closed’].includes(pc.connectionState)) {
+      pc.close();
+      delete peerConnections[toSocketId];
+      document.getElementById(`remote-audio-${toSocketId}`)?.remove();
+    }
+  };
+
+  if (isInitiator) {
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    socket.emit(‘voice_offer’, { toSocketId, offer, roomId: currentVoiceChannel });
+  }
+  return pc;
+}
+
+function updateVoiceParticipants() {
+  const list = document.getElementById(‘voice-participants-list’);
+  if (!list) return;
+  if (!currentVoiceChannel) { list.innerHTML = ‘’; return; }
+  const users = voiceStateMap[currentVoiceChannel] || [];
+  // Always show self
+  const allUsers = [{ username: currentUser?.username, isSelf: true }, ...users.filter(u => u.username !== currentUser?.username)];
+  list.innerHTML = allUsers.map(u => `
+    <div class="voice-participant">
+      <div class="voice-participant-dot"></div>
+      <span style="font-size:13px">${escHtml(u.username)}${u.isSelf ? ‘ (あなた)’ : ‘’}</span>
+      ${voiceIsMuted && u.isSelf ? ‘<span style="font-size:11px;color:var(--red)">🔇</span>’ : ‘’}
+    </div>
+  `).join(‘’);
+}
+
+// Voice socket events - called from initSocket
+function initVoiceSocketEvents() {
+  socket.on(‘voice_peers’, async ({ roomId, peers }) => {
+    for (const peer of peers) {
+      await createPeerConnection(peer.socketId, true);
+    }
+    updateVoiceParticipants();
+  });
+
+  socket.on(‘voice_user_joined’, async ({ roomId, socketId, username }) => {
+    if (roomId === currentVoiceChannel && socketId !== socket.id) {
+      await createPeerConnection(socketId, false);
+    }
+    updateVoiceParticipants();
+  });
+
+  socket.on(‘voice_user_left’, ({ roomId, socketId }) => {
+    if (peerConnections[socketId]) {
+      peerConnections[socketId].close();
+      delete peerConnections[socketId];
+      document.getElementById(`remote-audio-${socketId}`)?.remove();
+    }
+    updateVoiceParticipants();
+  });
+
+  socket.on(‘voice_offer’, async ({ fromSocketId, offer, username }) => {
+    if (!currentVoiceChannel) return;
+    const pc = await createPeerConnection(fromSocketId, false);
+    await pc.setRemoteDescription(new RTCSessionDescription(offer));
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    socket.emit(‘voice_answer’, { toSocketId: fromSocketId, answer });
+  });
+
+  socket.on(‘voice_answer’, async ({ fromSocketId, answer }) => {
+    const pc = peerConnections[fromSocketId];
+    if (pc) await pc.setRemoteDescription(new RTCSessionDescription(answer));
+  });
+
+  socket.on(‘voice_ice’, async ({ fromSocketId, candidate }) => {
+    const pc = peerConnections[fromSocketId];
+    if (pc) { try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch(e) {} }
+  });
+
+  socket.on(‘voice_state’, ({ roomId, users }) => {
+    voiceStateMap[roomId] = users;
+    renderVoiceChannelList();
+    updateVoiceParticipants();
+  });
 }
 
 // ════ INIT ════

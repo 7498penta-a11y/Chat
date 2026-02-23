@@ -74,7 +74,12 @@ async function fetchDiscordHistory(appChannelId, limit = 50) {
     if (!ch || !ch.isTextBased()) return null;
     const fetched = await ch.messages.fetch({ limit });
     const sorted = [...fetched.values()].sort((a, b) => a.createdTimestamp - b.createdTimestamp);
-    return sorted.filter(m => m.content || m.attachments.size > 0).map(m => discordMsgToApp(m, appChannelId));
+    return sorted
+      .filter(m => m.content || m.attachments.size > 0)
+      // ボットが送信したメッセージ（Webからの転送エコー）を除外
+      // 除外しないと ch.messages に UUID と Discord ID の両方で同じ内容が保存され重複する
+      .filter(m => m.author?.id !== discordBot?.user?.id)
+      .map(m => discordMsgToApp(m, appChannelId));
   } catch (err) {
     console.error(`[Discord履歴] #${appChannelId} 取得失敗:`, err.message);
     return null;
@@ -296,6 +301,27 @@ app.get('/api/channels/:id/messages', authMiddleware, async (req, res) => {
   // システムメッセージを除外するフィルター
   const filterSystem = msgs => msgs.filter(m => m.type !== 'system');
 
+  // 最終出力前に ID 重複 + 内容重複（author/content/時刻±5秒）を除去する
+  function dedup(msgs) {
+    const seenIds = new Set();
+    const seenContent = new Map(); // key: "author|content" → earliest timestamp
+    return msgs.filter(m => {
+      if (seenIds.has(m.id)) return false;
+      seenIds.add(m.id);
+      const key = `${m.author}|${m.type}|${m.content || ''}`;
+      const ts = new Date(m.timestamp).getTime();
+      if (seenContent.has(key)) {
+        const prev = seenContent.get(key);
+        if (Math.abs(ts - prev) < 5000) return false; // 5秒以内の同内容は重複とみなす
+        // 古い方のタイムスタンプを更新（最新を記録）
+        seenContent.set(key, ts);
+      } else {
+        seenContent.set(key, ts);
+      }
+      return true;
+    });
+  }
+
   const discordHistory = await fetchDiscordHistory(channelId, limit);
   if (discordHistory && discordHistory.length > 0) {
     const existingIds = new Set(ch.messages.map(m => m.id));
@@ -305,15 +331,16 @@ app.get('/api/channels/:id/messages', authMiddleware, async (req, res) => {
         if (messagesCol) messagesCol.updateOne({ id: msg.id }, { $setOnInsert: msg }, { upsert: true }).catch(() => {});
       }
     }
-    return res.json(filterSystem([...ch.messages].sort((a,b) => new Date(a.timestamp)-new Date(b.timestamp))).slice(-limit));
+    const sorted = [...ch.messages].sort((a,b) => new Date(a.timestamp)-new Date(b.timestamp));
+    return res.json(dedup(filterSystem(sorted)).slice(-limit));
   }
 
   if (messagesCol) {
-    // MongoDB からはシステムメッセージを除外して取得
     const msgs = await messagesCol.find({ channelId, type: { $ne: 'system' } }).sort({ timestamp: 1 }).limit(limit).toArray();
-    if (msgs.length > 0) return res.json(msgs);
+    if (msgs.length > 0) return res.json(dedup(msgs));
   }
-  res.json(filterSystem(ch.messages).slice(-limit));
+  const sorted = [...ch.messages].sort((a,b) => new Date(a.timestamp)-new Date(b.timestamp));
+  res.json(dedup(filterSystem(sorted)).slice(-limit));
 });
 
 app.get('/api/channels/:id/pins', authMiddleware, async (req, res) => {

@@ -982,7 +982,8 @@ async function joinChannel(channelId) {
   document.getElementById('chat-header-name').textContent = ch.name;
   document.getElementById('chat-header-topic').textContent = ch.topic || '';
   document.getElementById('msg-input').placeholder = `#${ch.name} にメッセージを送信`;
-  document.getElementById('welcome-title').textContent = `#${ch.name} へようこそ！`;
+  const _welcomeTitle = document.getElementById('welcome-title');
+  if (_welcomeTitle) _welcomeTitle.textContent = `#${ch.name} へようこそ！`;
   document.getElementById('chat-header-sep').style.display = ch.topic ? '' : 'none';
   document.getElementById('input-bar').style.display = '';
 

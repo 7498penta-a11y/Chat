@@ -348,7 +348,7 @@ html,body{height:100%;font-family:var(--font-main);font-size:var(--font-size);ba
       <div class="user-actions">
         <button class="user-action-btn" title="管理者パネル" id="admin-btn" onclick="openAdminPanel()" style="display:none">👑</button>
         <button class="user-action-btn" title="設定" onclick="openSettings()">⚙</button>
-        <button class="user-action-btn" title="ログアウト" onclick="logout()">🚪</button>
+        <button class="user-action-btn" title="ログアウト" onclick="openLogoutConfirm()">🚪</button>
       </div>
     </div>
   </div>
@@ -456,15 +456,27 @@ html,body{height:100%;font-family:var(--font-main);font-size:var(--font-size);ba
       <div>
         <div class="settings-section-title">👤 アカウント</div>
         <div class="settings-row"><div><div class="settings-row-label" id="settings-username">—</div><div class="settings-row-desc" id="settings-role">member</div></div></div>
-        <button class="danger-btn" style="margin-bottom:8px" onclick="logout()">🚪 ログアウト</button>
+        <button class="danger-btn" style="margin-bottom:8px" onclick="openLogoutConfirm()">🚪 ログアウト</button>
         <button class="danger-btn" onclick="openDeleteAccount()">🗑 アカウントを削除</button>
       </div>
     </div>
   </div>
 </div>
 
+<div class="modal-overlay" id="logout-confirm-modal" onclick="closeModalOutside(event,'logout-confirm-modal')">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-header"><div class="modal-title">🚪 ログアウト</div><button class="modal-close" onclick="closeModal('logout-confirm-modal')">✕</button></div>
+    <div class="modal-body">
+      <p style="color:var(--text-2);margin-bottom:16px">ログアウトしますか？</p>
+      <div style="display:flex;gap:8px">
+        <button class="danger-btn" style="flex:1" onclick="logout()">ログアウト</button>
+        <button style="flex:1;padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-hover);color:var(--text-2);font-size:14px;cursor:pointer" onclick="closeModal('logout-confirm-modal')">キャンセル</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="delete-account-modal" onclick="closeModalOutside(event,'delete-account-modal')">
-  <div class="modal" style="max-width:400px">
     <div class="modal-header"><div class="modal-title" style="color:var(--red)">⚠ アカウント削除</div><button class="modal-close" onclick="closeModal('delete-account-modal')">✕</button></div>
     <div class="modal-body">
       <p style="color:var(--text-2);margin-bottom:16px;line-height:1.6">この操作は取り消せません。アカウントが完全に削除されます。<br>確認のためパスワードを入力してください。</p>
@@ -740,7 +752,8 @@ function hideError(){document.getElementById('auth-error').classList.remove('sho
 async function login(){const username=document.getElementById('login-username').value.trim();const password=document.getElementById('login-password').value;if(!username||!password)return showError('ユーザー名とパスワードを入力してください');try{const res=await fetch(`${API}/api/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});const data=await res.json();if(!res.ok)return showError(data.error||'ログイン失敗');onLogin(data);}catch{showError('サーバーに接続できません');}}
 async function register(){const username=document.getElementById('reg-username').value.trim();const password=document.getElementById('reg-password').value;if(!username||!password)return showError('ユーザー名とパスワードを入力してください');if(password.length<6)return showError('パスワードは6文字以上');try{const res=await fetch(`${API}/api/register`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});const data=await res.json();if(!res.ok)return showError(data.error||'登録失敗');onLogin(data);}catch{showError('サーバーに接続できません');}}
 function onLogin({token:t,user}){token=t;currentUser=user;localStorage.setItem('token',t);document.getElementById('auth-screen').style.display='none';document.getElementById('app').classList.add('visible');applySettings();initApp();}
-function logout(){if(!confirm('ログアウトしますか？'))return;localStorage.removeItem('token');if(socket)socket.disconnect();location.reload();}
+function openLogoutConfirm() { closeModal('settings-modal'); openModal('logout-confirm-modal'); }
+function logout(){localStorage.removeItem('token');localStorage.removeItem('nexus_dmRooms');if(socket)socket.disconnect();location.reload();}
 
 // ════════════════════════════════ APP INIT ═════════════════════════════
 async function initApp() {

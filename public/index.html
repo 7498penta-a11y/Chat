@@ -655,7 +655,10 @@ async function initApp() {
     // システムメッセージはクライアントでも完全無視
     if (msg.type === 'system') return;
     if(!allMessages[msg.channelId]) allMessages[msg.channelId]=[];
-    allMessages[msg.channelId].push(msg);
+    // ── allMessagesへの重複プッシュを防ぐ ──
+    if (!allMessages[msg.channelId].find(m => m.id === msg.id)) {
+      allMessages[msg.channelId].push(msg);
+    }
     if(msg.channelId===currentChannel && currentChannelType==='text'){appendMessage(msg);scrollToBottom();}
     else if(msg.type!=='system'){unreadCounts[msg.channelId]=(unreadCounts[msg.channelId]||0)+1;updateUnreadBadge(msg.channelId);}
     const isMention=msg.content&&currentUser&&msg.content.includes('@'+currentUser.username);
@@ -751,6 +754,34 @@ async function joinChannel(channelId, silent = false) {
   document.getElementById('messages').style.display = '';
   document.getElementById('input-bar').style.display = '';
   document.getElementById('pins-btn').style.display = '';
+
+  // DOM描画はfetch完了後に行う（競合防止のため先にローディング表示）
+  document.getElementById('messages').innerHTML = `
+    <div class="welcome-msg">
+      <div class="welcome-icon">#</div>
+      <div class="welcome-title">#${channelId} へようこそ！</div>
+      <div class="welcome-sub">履歴を読み込み中...</div>
+    </div>`;
+
+  socket.emit('join_channel', channelId);
+
+  const res = await fetch(`${API}/api/channels/${channelId}/messages`,{headers:{Authorization:`Bearer ${token}`}});
+  const messages = await res.json();
+
+  // ── fetchの非同期待機中に別チャンネルへ切り替わっていたら描画しない ──
+  if (channelId !== currentChannel) return;
+
+  // allMessages をサーバー履歴で上書き（socket経由で届いた分はIDでマージ）
+  const existingSocketMsgs = (allMessages[channelId] || []).filter(
+    m => !messages.find(s => s.id === m.id)
+  );
+  allMessages[channelId] = [...messages, ...existingSocketMsgs]
+    .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+  const savedTs = lastSeenTs[channelId];
+  let unreadInserted = false;
+
+  // DOMをクリアしてから履歴を描画（fetchが終わったタイミングで確定）
   document.getElementById('messages').innerHTML = `
     <div class="welcome-msg">
       <div class="welcome-icon">#</div>
@@ -758,16 +789,7 @@ async function joinChannel(channelId, silent = false) {
       <div class="welcome-sub">これはチャンネルの始まりです。</div>
     </div>`;
 
-  socket.emit('join_channel', channelId);
-
-  const res = await fetch(`${API}/api/channels/${channelId}/messages`,{headers:{Authorization:`Bearer ${token}`}});
-  const messages = await res.json();
-  allMessages[channelId] = messages;
-
-  const savedTs = lastSeenTs[channelId];
-  let unreadInserted = false;
-
-  messages.forEach((msg,i)=>{
+  allMessages[channelId].forEach((msg) => {
     if (!unreadInserted && savedTs && msg.timestamp > savedTs && msg.author !== currentUser?.username && msg.type !== 'system') {
       insertUnreadDivider();
       unreadInserted = true;

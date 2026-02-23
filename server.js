@@ -23,7 +23,6 @@ const DB_NAME    = process.env.DB_NAME    || 'chatapp';
 
 // ── チャンネルマッピング ──────────────────────────────────────────
 const APP_CHANNELS   = ['general', 'random', 'media', 'dev'];
-const VOICE_CHANNELS = ['voice-general', 'voice-gaming'];
 const discordToApp   = {};
 
 function getDiscordChannelId(appCh) {
@@ -210,7 +209,6 @@ const channels = {
 };
 const dmMessages   = {};
 const onlineUsers  = {};
-const voiceRooms   = {};
 const socketByUser = {};
 
 // ── Uploads ───────────────────────────────────────────────────────
@@ -252,6 +250,10 @@ function adminOnly(req, res, next) {
 // ── REST ──────────────────────────────────────────────────────────
 app.get('/health', (req, res) => res.json({ status: 'ok', mongo: !!usersCol, discord_bot: !!discordBot }));
 
+  }
+  res.json({ iceServers: servers });
+});
+
 app.post('/api/register', async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
@@ -286,8 +288,7 @@ app.get('/api/me', authMiddleware, async (req, res) => {
 
 app.get('/api/channels', authMiddleware, (req, res) => {
   const text  = Object.values(channels).map(c => ({ id: c.id, name: c.name, type: 'text' }));
-  const voice = VOICE_CHANNELS.map(id => ({ id, name: id.replace('voice-',''), type: 'voice' }));
-  res.json([...text, ...voice]);
+  res.json(text);
 });
 
 app.get('/api/channels/:id/messages', authMiddleware, async (req, res) => {
@@ -406,7 +407,7 @@ io.on('connection', async (socket) => {
   socket.user.role   = fullUser?.role   || socket.user.role || 'member';
   socket.user.userId = fullUser?.id     || socket.user.id;
 
-  onlineUsers[socket.id]            = { username: socket.user.username, userId: socket.user.userId, channelId: null, voiceChannelId: null };
+  onlineUsers[socket.id]            = { username: socket.user.username, userId: socket.user.userId, channelId: null };
   socketByUser[socket.user.username] = socket.id;
   broadcastOnlineUsers();
 
@@ -521,41 +522,8 @@ io.on('connection', async (socket) => {
     if (toSid) io.to(toSid).emit('dm_message', msg);
   });
 
-  // ボイスチャット参加
-  socket.on('join_voice', (channelId) => {
-    if (!VOICE_CHANNELS.includes(channelId)) return;
-    const prevVoice = onlineUsers[socket.id]?.voiceChannelId;
-    if (prevVoice) {
-      if (voiceRooms[prevVoice]) delete voiceRooms[prevVoice][socket.id];
-      socket.leave(`voice:${prevVoice}`);
-      io.to(`voice:${prevVoice}`).emit('voice_user_left', { username: socket.user.username, socketId: socket.id, channelId: prevVoice });
-    }
-    if (!voiceRooms[channelId]) voiceRooms[channelId] = {};
-    voiceRooms[channelId][socket.id] = { username: socket.user.username, userId: socket.user.userId };
-    socket.join(`voice:${channelId}`);
-    onlineUsers[socket.id].voiceChannelId = channelId;
-
-    const existingUsers = Object.entries(voiceRooms[channelId])
-      .filter(([sid]) => sid !== socket.id)
-      .map(([sid, u]) => ({ ...u, socketId: sid }));
-
-    socket.emit('voice_joined', { channelId, existingUsers });
-    socket.to(`voice:${channelId}`).emit('voice_user_joined', {
-      username: socket.user.username, userId: socket.user.userId, socketId: socket.id, channelId,
-    });
-    broadcastVoiceState();
-  });
-
-  socket.on('leave_voice', () => leaveVoice(socket));
-
-  // WebRTC シグナリング リレー
-  socket.on('voice_offer',  ({ to, offer })     => io.to(to).emit('voice_offer',  { from: socket.id, offer,     username: socket.user.username }));
-  socket.on('voice_answer', ({ to, answer })    => io.to(to).emit('voice_answer', { from: socket.id, answer }));
-  socket.on('voice_ice',    ({ to, candidate }) => io.to(to).emit('voice_ice',    { from: socket.id, candidate }));
-
   socket.on('disconnect', () => {
     console.log(`[-] ${socket.user.username} disconnected`);
-    leaveVoice(socket);
     delete onlineUsers[socket.id];
     delete socketByUser[socket.user.username];
     broadcastOnlineUsers();
@@ -563,27 +531,13 @@ io.on('connection', async (socket) => {
 });
 
 // ── ヘルパー ──────────────────────────────────────────────────────
-function leaveVoice(socket) {
-  const channelId = onlineUsers[socket.id]?.voiceChannelId;
-  if (!channelId) return;
-  if (voiceRooms[channelId]) delete voiceRooms[channelId][socket.id];
-  socket.leave(`voice:${channelId}`);
-  if (onlineUsers[socket.id]) onlineUsers[socket.id].voiceChannelId = null;
-  io.to(`voice:${channelId}`).emit('voice_user_left', { username: socket.user.username, socketId: socket.id, channelId });
-  broadcastVoiceState();
-}
 
 function broadcastOnlineUsers() {
   io.emit('online_users', Object.values(onlineUsers).map(u => ({
-    username: u.username, userId: u.userId, voiceChannelId: u.voiceChannelId || null,
+    username: u.username, userId: u.userId,
   })));
 }
 
-function broadcastVoiceState() {
-  const state = {};
-  for (const [chId, room] of Object.entries(voiceRooms)) state[chId] = Object.values(room);
-  io.emit('voice_state', state);
-}
 
 function buildMsg(author, content, channelId, type, fileInfo = null) {
   return { id: uuidv4(), author, content, channelId, type, fileInfo, timestamp: new Date().toISOString() };

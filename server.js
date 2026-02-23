@@ -10,7 +10,7 @@ const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
 const { MongoClient } = require('mongodb');
-const { Client, GatewayIntentBits } = require('discord.js');
+const { Client, GatewayIntentBits, AttachmentBuilder } = require('discord.js');
 
 const app = express();
 const server = http.createServer(app);
@@ -99,12 +99,49 @@ async function sendToDiscordViaBot(appChannelId, username, content, fileInfo = n
   try {
     const ch = await discordBot.channels.fetch(discordChId);
     if (!ch?.isTextBased()) return;
+
     if (fileInfo) {
-      await ch.send(`**[${username}]**: 📎 ${fileInfo.filename}`);
+      const origName = fileInfo.filename || 'file';
+      const label = `**[${username}]**: 📎 ${origName}`;
+
+      // ── ① ローカルファイルをバッファで読み込み添付（最優先）──
+      // 画像 → Discordで自動プレビュー / その他 → ダウンロードボタン表示
+      let localPath = null;
+      if (fileInfo.url && !fileInfo.url.startsWith('http')) {
+        const rel = fileInfo.url.startsWith('/') ? fileInfo.url.slice(1) : fileInfo.url;
+        localPath = path.join(__dirname, rel);
+      }
+
+      if (localPath && fs.existsSync(localPath)) {
+        const buffer = fs.readFileSync(localPath);
+        const attachment = new AttachmentBuilder(buffer, { name: origName });
+        await ch.send({ content: label, files: [attachment] });
+        console.log(`[Bot→Discord] ✅ 添付送信 #${appChannelId} "${username}" → ${origName}`);
+        return;
+      }
+
+      // ── ② 外部URL（http）の場合: 画像はURL埋め込み、他はリンク ──
+      if (fileInfo.url?.startsWith('http')) {
+        const isImg = fileInfo.mimetype?.startsWith('image/') ||
+          /\.(png|jpe?g|gif|webp)$/i.test(origName);
+        if (isImg) {
+          // Discord は画像URLを自動的にプレビュー表示する
+          await ch.send(`**[${username}]**:\n${fileInfo.url}`);
+        } else {
+          await ch.send(`${label}\n${fileInfo.url}`);
+        }
+        console.log(`[Bot→Discord] ✅ URL送信 #${appChannelId} "${username}" → ${origName}`);
+        return;
+      }
+
+      // ── ③ ファイルが見つからない場合 ──
+      await ch.send(`${label} (ファイル送信失敗)`);
+      console.warn(`[Bot→Discord] ⚠️ ファイル未発見: ${localPath}`);
+
     } else {
       await ch.send(`**[${username}]**: ${content}`);
+      console.log(`[Bot→Discord] ✅ #${appChannelId} "${username}"`);
     }
-    console.log(`[Bot→Discord] ✅ #${appChannelId} "${username}"`);
   } catch (err) {
     console.error(`[Bot→Discord] ❌ ${err.message}`);
   }

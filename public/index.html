@@ -331,7 +331,7 @@ flex-wrap:wrap;
 gap:2px;
 }
 /* アクションボタンを小さく（常時表示のため全メッセージに出るので控えめに） */
-.msg-action-btn{width:26px;height:26px;font-size:13px;color:var(–text-muted);}
+.msg-action-btn{width:26px;height:26px;font-size:13px;color:var(–text-muted);touch-action:manipulation;}
 .msg-action-btn:active{background:var(–bg-hover);color:var(–text-1);}
 
 /* ホバーを無効化（touch端末にhoverはない） */
@@ -348,8 +348,8 @@ padding:0 8px calc(8px + env(safe-area-inset-bottom)) 8px;
 }
 /* キーボードショートカットヒントは非表示 */
 .input-hint{display:none !important;}
-.attach-btn,.emoji-btn{width:32px;height:32px;font-size:18px;}
-.send-btn{width:38px;height:38px;font-size:18px;}
+.attach-btn,.emoji-btn{width:32px;height:32px;font-size:18px;touch-action:manipulation;}
+.send-btn{width:38px;height:38px;font-size:18px;touch-action:manipulation;}
 .msg-input{font-size:16px;} /* iOS自動ズーム防止: 16px未満だとズームされる */
 
 /* 絵文字ピッカーをフル幅・画面下部に固定 */
@@ -614,6 +614,7 @@ right:0;
 </div>
 
 <div class="modal-overlay" id="delete-account-modal" onclick="closeModalOutside(event,'delete-account-modal')">
+  <div class="modal" style="max-width:400px">
     <div class="modal-header"><div class="modal-title" style="color:var(--red)">⚠ アカウント削除</div><button class="modal-close" onclick="closeModal('delete-account-modal')">✕</button></div>
     <div class="modal-body">
       <p style="color:var(--text-2);margin-bottom:16px;line-height:1.6">この操作は取り消せません。アカウントが完全に削除されます。<br>確認のためパスワードを入力してください。</p>

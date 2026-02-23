@@ -367,6 +367,11 @@ app.put('/api/users/:username/role', authMiddleware, adminOnly, async (req, res)
   res.json({ ok: true, username: req.params.username, role });
 });
 
+app.get('/api/members', authMiddleware, async (req, res) => {
+  const users = await Users.find();
+  res.json(users.map(u => ({ id: u.id, username: u.username, avatar: u.avatar, role: u.role })));
+});
+
 app.get('/api/users', authMiddleware, adminOnly, async (req, res) => {
   const users = await Users.find();
   res.json(users.map(u => ({ id: u.id, username: u.username, role: u.role, avatar: u.avatar })));
@@ -401,11 +406,16 @@ io.on('connection', async (socket) => {
   socket.on('join_channel', (channelId) => {
     if (!channels[channelId]) return;
     const prev = onlineUsers[socket.id]?.channelId;
-    if (prev) socket.leave(prev);
+    if (prev && prev !== channelId) {
+      socket.leave(prev);
+      // 退出通知は履歴に保存せずリアルタイムのみ
+      const leftMsg = buildMsg('system', `${socket.user.username} が退出しました`, prev, 'system');
+      socket.to(prev).emit('message', leftMsg);
+    }
     socket.join(channelId);
     onlineUsers[socket.id].channelId = channelId;
+    // 参加通知は履歴に保存せず、他のユーザーへのリアルタイム通知のみ
     const sys = buildMsg('system', `${socket.user.username} が参加しました`, channelId, 'system');
-    channels[channelId].messages.push(sys);
     socket.to(channelId).emit('message', sys);
   });
 

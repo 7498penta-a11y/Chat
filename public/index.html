@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
@@ -350,40 +349,6 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;
 .welcome-icon{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:16px;}
 .welcome-title{font-size:24px;font-weight:700;margin-bottom:6px;}
 .welcome-sub{font-size:15px;color:var(--text-3);}
-
-/* OGP Preview Cards */
-.ogp-card{display:flex;gap:0;background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);margin-top:8px;max-width:440px;overflow:hidden;text-decoration:none;transition:border-color 0.2s;}
-.ogp-card:hover{border-color:var(--accent);}
-.ogp-card-accent{width:4px;background:var(--accent);flex-shrink:0;}
-.ogp-card-body{padding:12px;flex:1;min-width:0;}
-.ogp-card-site{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
-.ogp-card-title{font-size:14px;font-weight:600;color:var(--text-1);margin-bottom:4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
-.ogp-card-desc{font-size:12px;color:var(--text-3);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-.ogp-card-img{width:80px;min-width:80px;height:80px;object-fit:cover;flex-shrink:0;}
-
-/* Voice Channel */
-.voice-panel{position:fixed;bottom:60px;left:72px;width:220px;background:var(--bg-dark);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px;z-index:1500;box-shadow:0 8px 32px rgba(0,0,0,0.5);display:none;}
-.voice-panel.open{display:block;}
-.voice-panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
-.voice-panel-title{font-size:12px;font-weight:700;color:var(--green);display:flex;align-items:center;gap:6px;}
-.voice-pulse{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite;}
-.voice-participants-list{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
-.voice-participant{display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:6px;font-size:13px;color:var(--text-2);}
-.voice-participant-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;}
-.voice-controls{display:flex;gap:6px;}
-.voice-ctrl-btn{flex:1;padding:7px;border:none;border-radius:var(--radius);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font-main);transition:all 0.15s;}
-.voice-mute-btn{background:rgba(250,166,26,0.15);color:var(--yellow);}
-.voice-mute-btn:hover{background:rgba(250,166,26,0.3);}
-.voice-mute-btn.muted{background:rgba(237,66,69,0.2);color:var(--red);}
-.voice-leave-btn{background:rgba(237,66,69,0.15);color:var(--red);}
-.voice-leave-btn:hover{background:rgba(237,66,69,0.3);}
-.ch-voice-item{display:flex;align-items:center;gap:8px;padding:5px 8px 5px 16px;margin:1px 8px;border-radius:6px;cursor:pointer;color:var(--text-3);font-size:14px;font-weight:500;transition:all 0.15s;}
-.ch-voice-item:hover{background:var(--bg-hover);color:var(--text-2);}
-.ch-voice-item.active-voice{background:var(--bg-active);color:var(--green);}
-.ch-voice-users{padding-left:40px;}
-.ch-voice-user{font-size:12px;color:var(--text-3);padding:2px 0;display:flex;align-items:center;gap:6px;}
-.voice-dot-sm{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;}
-
 *{scrollbar-width:thin;scrollbar-color:var(--bg-hover) transparent;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
 
@@ -392,44 +357,42 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;
 .drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;backdrop-filter:blur(2px);}
 .drawer-overlay.open{display:block;}
 @media(max-width:900px){
-.members-panel{position:fixed;right:0;top:0;bottom:0;z-index:300;transform:translateX(100%);transition:transform 0.28s cubic-bezier(0.16,1,0.3,1);box-shadow:-8px 0 32px rgba(0,0,0,0.4);}
-.members-panel.open{transform:translateX(0);}
-.mobile-members-btn{display:flex;}
+  .members-panel{position:fixed;right:0;top:0;bottom:0;z-index:300;transform:translateX(100%);transition:transform 0.28s cubic-bezier(0.16,1,0.3,1);box-shadow:-8px 0 32px rgba(0,0,0,0.4);}
+  .members-panel.open{transform:translateX(0);}
+  .mobile-members-btn{display:flex;}
 }
 @media(max-width:640px){
-.server-list{display:none;}
-.sidebar{position:fixed;left:0;top:0;bottom:0;z-index:300;transform:translateX(-100%);transition:transform 0.28s cubic-bezier(0.16,1,0.3,1);box-shadow:8px 0 32px rgba(0,0,0,0.4);width:min(280px,85vw);}
-.sidebar.open{transform:translateX(0);}
-.mobile-menu-btn{display:flex;}
-.auth-card{width:calc(100vw - 32px);padding:28px 20px;border-radius:16px;}
-.chat-header{height:52px;padding:0 8px 0 4px;}
-.chat-header-sep,.chat-header-topic{display:none;}
-.messages{padding:8px 0;}
-.msg{padding:4px 8px;gap:10px;}
-.msg-avatar{width:34px;height:34px;}
-.msg-content{font-size:14px;}
-.msg-actions{position:static;opacity:1;background:transparent;border:none;box-shadow:none;padding:2px 0;margin-top:2px;margin-left:44px;}
-.msg:hover{background:transparent;}
-.img-preview{max-width:100%;max-height:240px;}
-.file-attachment{max-width:100%;}
-.input-bar{padding:0 8px calc(8px + env(safe-area-inset-bottom)) 8px;}
-.input-hint{display:none !important;}
-.msg-input{font-size:16px;}
-.emoji-picker{position:fixed;left:0;right:0;bottom:0;width:100%;border-radius:16px 16px 0 0;padding-bottom:env(safe-area-inset-bottom);z-index:600;}
-.modal{width:100vw;max-width:100vw;max-height:92vh;border-radius:20px 20px 0 0;position:fixed;bottom:0;left:0;right:0;}
-.modal-overlay{align-items:flex-end;}
-.members-panel{width:min(280px,85vw);}
-.toast-notif{right:8px;top:8px;max-width:calc(100vw - 16px);}
+  .server-list{display:none;}
+  .sidebar{position:fixed;left:0;top:0;bottom:0;z-index:300;transform:translateX(-100%);transition:transform 0.28s cubic-bezier(0.16,1,0.3,1);box-shadow:8px 0 32px rgba(0,0,0,0.4);width:min(280px,85vw);}
+  .sidebar.open{transform:translateX(0);}
+  .mobile-menu-btn{display:flex;}
+  .auth-card{width:calc(100vw - 32px);padding:28px 20px;border-radius:16px;}
+  .chat-header{height:52px;padding:0 8px 0 4px;}
+  .chat-header-sep,.chat-header-topic{display:none;}
+  .messages{padding:8px 0;}
+  .msg{padding:4px 8px;gap:10px;}
+  .msg-avatar{width:34px;height:34px;}
+  .msg-content{font-size:14px;}
+  .msg-actions{position:static;opacity:1;background:transparent;border:none;box-shadow:none;padding:2px 0;margin-top:2px;margin-left:44px;}
+  .msg:hover{background:transparent;}
+  .img-preview{max-width:100%;max-height:240px;}
+  .file-attachment{max-width:100%;}
+  .input-bar{padding:0 8px calc(8px + env(safe-area-inset-bottom)) 8px;}
+  .input-hint{display:none !important;}
+  .msg-input{font-size:16px;}
+  .emoji-picker{position:fixed;left:0;right:0;bottom:0;width:100%;border-radius:16px 16px 0 0;padding-bottom:env(safe-area-inset-bottom);z-index:600;}
+  .modal{width:100vw;max-width:100vw;max-height:92vh;border-radius:20px 20px 0 0;position:fixed;bottom:0;left:0;right:0;}
+  .modal-overlay{align-items:flex-end;}
+  .members-panel{width:min(280px,85vw);}
+  .toast-notif{right:8px;top:8px;max-width:calc(100vw - 16px);}
 }
 @media(max-width:360px){.emoji-grid{grid-template-columns:repeat(7,1fr);}}
 @media(max-height:500px) and (max-width:900px){.modal{max-height:96vh;}.emoji-picker{max-height:180px;}}
 </style>
-
 </head>
 <body>
 
 <!-- AUTH -->
-
 <div id="auth-screen">
   <div class="auth-bg"></div>
   <div class="auth-card">
@@ -444,14 +407,14 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;
       <label class="field-label">ユーザー名</label>
       <input class="field-input" id="login-username" type="text" placeholder="username" autocomplete="username" />
       <label class="field-label">パスワード</label>
-      <input class="field-input" id="login-password" type="password" placeholder="********" autocomplete="current-password" />
+      <input class="field-input" id="login-password" type="password" placeholder="••••••••" autocomplete="current-password" />
       <button class="auth-btn" onclick="login()">ログイン</button>
     </div>
     <div id="register-form" style="display:none">
       <label class="field-label">ユーザー名 <span style="color:var(--text-muted);text-transform:none;font-size:11px">(3〜20文字・英数字・_・-)</span></label>
       <input class="field-input" id="reg-username" type="text" placeholder="username" autocomplete="username" />
       <label class="field-label">パスワード</label>
-      <input class="field-input" id="reg-password" type="password" placeholder="********" autocomplete="new-password" />
+      <input class="field-input" id="reg-password" type="password" placeholder="••••••••" autocomplete="new-password" />
       <div id="invite-code-field" style="display:none">
         <label class="field-label">招待コード</label>
         <input class="field-input" id="reg-invite" type="text" placeholder="XXXXXXXX" />
@@ -463,7 +426,6 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;
 </div>
 
 <!-- APP -->
-
 <div id="app">
   <div class="server-list">
     <div class="server-icon active" title="NexusChat">⚡</div>
@@ -478,11 +440,6 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;
         <button class="ch-category-btn" id="add-channel-btn" onclick="openChannelCreate()" style="display:none" title="チャンネルを作成">＋</button>
       </div>
       <div id="channel-list"></div>
-
-      <div class="ch-category" style="margin-top:4px">
-        ボイスチャンネル
-      </div>
-      <div id="voice-channel-list"></div>
       <div class="ch-category" style="margin-top:8px">
         ダイレクトメッセージ
         <button class="ch-category-btn" onclick="openDmSearch()" title="新しいDM">＋</button>
@@ -495,7 +452,7 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;
         <div class="user-status-dot" id="user-status-dot"></div>
       </div>
       <div class="user-info">
-        <div class="user-name" id="user-display-name">--</div>
+        <div class="user-name" id="user-display-name">—</div>
         <div class="user-tag" id="user-role-tag" style="color:var(--text-3);font-size:11px"></div>
       </div>
       <div class="user-actions">
@@ -521,76 +478,59 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;
       </div>
     </div>
 
-```
-<div class="search-bar" id="search-bar">
-  <input class="search-input" id="search-input" placeholder="メッセージを検索..." oninput="debounceSearch(this.value)" />
-  <select class="search-scope" id="search-scope">
-    <option value="">全チャンネル</option>
-    <option value="current">このチャンネル</option>
-  </select>
-  <button class="secondary-btn" onclick="toggleSearchFilters()" title="詳細フィルター">⚙</button>
-</div>
-<div class="search-filters" id="search-filters">
-  <input class="search-filter-input" id="search-author" placeholder="投稿者" />
-  <input class="search-filter-input" id="search-from-date" type="date" title="開始日" />
-  <input class="search-filter-input" id="search-to-date" type="date" title="終了日" />
-  <button class="secondary-btn" onclick="doSearch()">検索</button>
-</div>
-<div class="search-results" id="search-results"></div>
+    <div class="search-bar" id="search-bar">
+      <input class="search-input" id="search-input" placeholder="メッセージを検索..." oninput="debounceSearch(this.value)" />
+      <select class="search-scope" id="search-scope">
+        <option value="">全チャンネル</option>
+        <option value="current">このチャンネル</option>
+      </select>
+      <button class="secondary-btn" onclick="toggleSearchFilters()" title="詳細フィルター">⚙</button>
+    </div>
+    <div class="search-filters" id="search-filters">
+      <input class="search-filter-input" id="search-author" placeholder="投稿者" />
+      <input class="search-filter-input" id="search-from-date" type="date" title="開始日" />
+      <input class="search-filter-input" id="search-to-date" type="date" title="終了日" />
+      <button class="secondary-btn" onclick="doSearch()">検索</button>
+    </div>
+    <div class="search-results" id="search-results"></div>
 
-<div class="muted-banner" id="muted-banner">🔇 あなたはミュートされています。メッセージを送信できません。</div>
+    <div class="muted-banner" id="muted-banner">🔇 あなたはミュートされています。メッセージを送信できません。</div>
 
-<div class="messages" id="messages">
-  <div class="welcome-msg">
-    <div class="welcome-icon">#</div>
-    <div class="welcome-title" id="welcome-title">#general へようこそ！</div>
-    <div class="welcome-sub">これはチャンネルの始まりです。</div>
-  </div>
-</div>
+    <div class="messages" id="messages">
+      <div class="welcome-msg">
+        <div class="welcome-icon">#</div>
+        <div class="welcome-title" id="welcome-title">#general へようこそ！</div>
+        <div class="welcome-sub">これはチャンネルの始まりです。</div>
+      </div>
+    </div>
 
-<div class="typing-bar" id="typing-bar"></div>
-<div class="input-bar" style="position:relative" id="input-bar">
-  <div class="reply-preview" id="reply-preview">
-    <span class="reply-preview-text" id="reply-preview-text"></span>
-    <button class="reply-close-btn" onclick="cancelReply()">✕</button>
-  </div>
-  <div class="emoji-picker" id="emoji-picker">
-    <div class="emoji-categories" id="emoji-cats"></div>
-    <div class="emoji-grid" id="emoji-grid"></div>
-  </div>
-  <div class="input-box">
-    <button class="attach-btn" onclick="openFilePicker()">📎</button>
-    <button class="emoji-btn" onclick="toggleEmojiPicker()">😊</button>
-    <textarea class="msg-input" id="msg-input" placeholder="#general にメッセージを送信" rows="1"
-      oninput="autoResize(this);emitTyping()" onkeydown="handleKey(event)"></textarea>
-    <button class="send-btn" onclick="sendMessage()">▶</button>
-  </div>
-  <div class="input-hint">
-    <span><kbd>Shift+Enter</kbd> 改行</span>
-    <span><kbd>**太字**</kbd> <kbd>*斜体*</kbd> <kbd>`コード`</kbd></span>
-  </div>
-</div>
-```
-
+    <div class="typing-bar" id="typing-bar"></div>
+    <div class="input-bar" style="position:relative" id="input-bar">
+      <div class="reply-preview" id="reply-preview">
+        <span class="reply-preview-text" id="reply-preview-text"></span>
+        <button class="reply-close-btn" onclick="cancelReply()">✕</button>
+      </div>
+      <div class="emoji-picker" id="emoji-picker">
+        <div class="emoji-categories" id="emoji-cats"></div>
+        <div class="emoji-grid" id="emoji-grid"></div>
+      </div>
+      <div class="input-box">
+        <button class="attach-btn" onclick="openFilePicker()">📎</button>
+        <button class="emoji-btn" onclick="toggleEmojiPicker()">😊</button>
+        <textarea class="msg-input" id="msg-input" placeholder="#general にメッセージを送信" rows="1"
+          oninput="autoResize(this);emitTyping()" onkeydown="handleKey(event)"></textarea>
+        <button class="send-btn" onclick="sendMessage()">▶</button>
+      </div>
+      <div class="input-hint">
+        <span><kbd>Shift+Enter</kbd> 改行</span>
+        <span><kbd>**太字**</kbd> <kbd>*斜体*</kbd> <kbd>`コード`</kbd></span>
+      </div>
+    </div>
   </div>
 
   <div class="members-panel" id="members-panel">
-    <div class="members-header">メンバー -- <span id="online-count">0</span>名</div>
+    <div class="members-header">メンバー — <span id="online-count">0</span>名</div>
     <div id="members-list"></div>
-  </div>
-</div>
-
-
-<!-- Voice Channel Panel -->
-<div class="voice-panel" id="voice-panel">
-  <div class="voice-panel-header">
-    <div class="voice-panel-title"><div class="voice-pulse"></div>接続中</div>
-    <span id="voice-panel-channel" style="font-size:11px;color:var(--text-3)"></span>
-  </div>
-  <div class="voice-participants-list" id="voice-participants-list"></div>
-  <div class="voice-controls">
-    <button class="voice-ctrl-btn voice-mute-btn" id="voice-mute-btn" onclick="toggleVoiceMute()">&#127908; ミュート</button>
-    <button class="voice-ctrl-btn voice-leave-btn" onclick="leaveVoiceChannel()">退出</button>
   </div>
 </div>
 
@@ -600,7 +540,6 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;
 <div class="upload-toast" id="upload-toast"><div class="upload-spinner"></div><span id="upload-toast-text">アップロード中...</span></div>
 
 <!-- ステータスメニュー -->
-
 <div id="status-menu" style="display:none;position:fixed;background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius-lg);padding:8px;box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:3000;min-width:160px;">
   <div onclick="setStatus('online')" style="padding:8px 12px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:14px;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''"><span style="width:10px;height:10px;border-radius:50%;background:var(--green);display:inline-block"></span>オンライン</div>
   <div onclick="setStatus('away')" style="padding:8px 12px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:14px;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''"><span style="width:10px;height:10px;border-radius:50%;background:var(--yellow);display:inline-block"></span>離席中</div>
@@ -608,7 +547,6 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;
 </div>
 
 <!-- 設定モーダル -->
-
 <div class="modal-overlay" id="settings-modal" onclick="closeModalOutside(event,'settings-modal')">
   <div class="modal">
     <div class="modal-header"><div class="modal-title">⚙ 設定</div><button class="modal-close" onclick="closeModal('settings-modal')">✕</button></div>
@@ -636,65 +574,61 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;
         </div>
       </div>
 
-```
-  <!-- アバタータブ -->
-  <div class="modal-tab-pane" id="settings-tab-avatar">
-    <div class="settings-section-title">プレビュー</div>
-    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
-      <img id="settings-avatar-preview" src="" style="width:72px;height:72px;border-radius:50%;border:2px solid var(--border);object-fit:cover" />
-      <div>
-        <div style="font-size:14px;font-weight:600;margin-bottom:4px" id="settings-username-display">--</div>
-        <div style="font-size:12px;color:var(--text-3)" id="settings-role-display">member</div>
+      <!-- アバタータブ -->
+      <div class="modal-tab-pane" id="settings-tab-avatar">
+        <div class="settings-section-title">プレビュー</div>
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+          <img id="settings-avatar-preview" src="" style="width:72px;height:72px;border-radius:50%;border:2px solid var(--border);object-fit:cover" />
+          <div>
+            <div style="font-size:14px;font-weight:600;margin-bottom:4px" id="settings-username-display">—</div>
+            <div style="font-size:12px;color:var(--text-3)" id="settings-role-display">member</div>
+          </div>
+        </div>
+        <div class="settings-section-title">スタイルを選ぶ</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px" id="avatar-style-btns"></div>
+        <div class="settings-section-title">画像をアップロード</div>
+        <input type="file" id="avatar-file-input" accept="image/*" style="display:none" onchange="handleAvatarFileSelect(this.files)" />
+        <button class="secondary-btn" style="width:100%;margin-bottom:12px" onclick="document.getElementById('avatar-file-input').click()">📁 ファイルを選択</button>
+        <button class="primary-btn" style="width:100%" onclick="saveAvatar()">✓ 保存する</button>
+        <div id="avatar-save-msg" style="font-size:12px;color:var(--green);margin-top:8px;display:none">✓ 保存しました</div>
+      </div>
+
+      <!-- 通知タブ -->
+      <div class="modal-tab-pane" id="settings-tab-notifications">
+        <div class="settings-section-title">通知</div>
+        <div class="settings-row"><div><div class="settings-row-label">通知音</div></div><div class="toggle on" id="toggle-sound" onclick="toggleSetting('sound')"></div></div>
+        <div class="settings-row"><div><div class="settings-row-label">デスクトップ通知</div></div><div class="toggle" id="toggle-notif" onclick="requestNotifPermission()"></div></div>
+        <div class="settings-row"><div><div class="settings-row-label">メンション時のみ</div></div><div class="toggle" id="toggle-mention-only" onclick="toggleSetting('mentionOnly')"></div></div>
+        <div class="settings-section-title" style="margin-top:16px">キーワード通知</div>
+        <div class="settings-row-desc" style="margin-bottom:8px">指定したキーワードを含むメッセージを通知します（最大20件）</div>
+        <div class="tag-input-container" id="keyword-tags-container">
+          <input class="tag-input" id="keyword-input" placeholder="キーワードを入力してEnter" onkeydown="handleKeywordInput(event)" />
+        </div>
+        <button class="primary-btn" style="width:100%;margin-top:12px" onclick="saveKeywords()">💾 保存する</button>
+        <div id="keyword-save-msg" style="font-size:12px;color:var(--green);margin-top:8px;display:none">✓ 保存しました</div>
+      </div>
+
+      <!-- アカウントタブ -->
+      <div class="modal-tab-pane" id="settings-tab-account">
+        <div class="settings-section-title">プロフィール</div>
+        <div class="settings-row"><div><div class="settings-row-label" id="settings-username">—</div><div class="settings-row-desc" id="settings-role">member</div></div></div>
+        <div class="settings-section-title">パスワード変更</div>
+        <input class="search-input" id="pw-current" type="password" placeholder="現在のパスワード" style="width:100%;margin-bottom:8px" />
+        <input class="search-input" id="pw-new" type="password" placeholder="新しいパスワード（6文字以上）" style="width:100%;margin-bottom:8px" />
+        <button class="primary-btn" style="width:100%;margin-bottom:8px" onclick="changePassword()">🔑 パスワードを変更</button>
+        <div id="pw-msg" style="font-size:12px;margin-bottom:12px;display:none"></div>
+        <div class="settings-section-title">ログイン履歴</div>
+        <div id="sessions-list" style="margin-bottom:16px"></div>
+        <button class="secondary-btn" style="width:100%;margin-bottom:16px" onclick="loadSessions()">📋 履歴を読み込む</button>
+        <div class="settings-section-title">危険な操作</div>
+        <button class="danger-btn" style="margin-bottom:8px" onclick="openLogoutConfirm()">🚪 ログアウト</button>
+        <button class="danger-btn" onclick="openDeleteAccount()">🗑 アカウントを削除</button>
       </div>
     </div>
-    <div class="settings-section-title">スタイルを選ぶ</div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px" id="avatar-style-btns"></div>
-    <div class="settings-section-title">画像をアップロード</div>
-    <input type="file" id="avatar-file-input" accept="image/*" style="display:none" onchange="handleAvatarFileSelect(this.files)" />
-    <button class="secondary-btn" style="width:100%;margin-bottom:12px" onclick="document.getElementById('avatar-file-input').click()">📁 ファイルを選択</button>
-    <button class="primary-btn" style="width:100%" onclick="saveAvatar()">✓ 保存する</button>
-    <div id="avatar-save-msg" style="font-size:12px;color:var(--green);margin-top:8px;display:none">✓ 保存しました</div>
-  </div>
-
-  <!-- 通知タブ -->
-  <div class="modal-tab-pane" id="settings-tab-notifications">
-    <div class="settings-section-title">通知</div>
-    <div class="settings-row"><div><div class="settings-row-label">通知音</div></div><div class="toggle on" id="toggle-sound" onclick="toggleSetting('sound')"></div></div>
-    <div class="settings-row"><div><div class="settings-row-label">デスクトップ通知</div></div><div class="toggle" id="toggle-notif" onclick="requestNotifPermission()"></div></div>
-    <div class="settings-row"><div><div class="settings-row-label">メンション時のみ</div></div><div class="toggle" id="toggle-mention-only" onclick="toggleSetting('mentionOnly')"></div></div>
-    <div class="settings-section-title" style="margin-top:16px">キーワード通知</div>
-    <div class="settings-row-desc" style="margin-bottom:8px">指定したキーワードを含むメッセージを通知します（最大20件）</div>
-    <div class="tag-input-container" id="keyword-tags-container">
-      <input class="tag-input" id="keyword-input" placeholder="キーワードを入力してEnter" onkeydown="handleKeywordInput(event)" />
-    </div>
-    <button class="primary-btn" style="width:100%;margin-top:12px" onclick="saveKeywords()">💾 保存する</button>
-    <div id="keyword-save-msg" style="font-size:12px;color:var(--green);margin-top:8px;display:none">✓ 保存しました</div>
-  </div>
-
-  <!-- アカウントタブ -->
-  <div class="modal-tab-pane" id="settings-tab-account">
-    <div class="settings-section-title">プロフィール</div>
-    <div class="settings-row"><div><div class="settings-row-label" id="settings-username">--</div><div class="settings-row-desc" id="settings-role">member</div></div></div>
-    <div class="settings-section-title">パスワード変更</div>
-    <input class="search-input" id="pw-current" type="password" placeholder="現在のパスワード" style="width:100%;margin-bottom:8px" />
-    <input class="search-input" id="pw-new" type="password" placeholder="新しいパスワード（6文字以上）" style="width:100%;margin-bottom:8px" />
-    <button class="primary-btn" style="width:100%;margin-bottom:8px" onclick="changePassword()">🔑 パスワードを変更</button>
-    <div id="pw-msg" style="font-size:12px;margin-bottom:12px;display:none"></div>
-    <div class="settings-section-title">ログイン履歴</div>
-    <div id="sessions-list" style="margin-bottom:16px"></div>
-    <button class="secondary-btn" style="width:100%;margin-bottom:16px" onclick="loadSessions()">📋 履歴を読み込む</button>
-    <div class="settings-section-title">危険な操作</div>
-    <button class="danger-btn" style="margin-bottom:8px" onclick="openLogoutConfirm()">🚪 ログアウト</button>
-    <button class="danger-btn" onclick="openDeleteAccount()">🗑 アカウントを削除</button>
-  </div>
-</div>
-```
-
   </div>
 </div>
 
 <!-- ログアウト確認 -->
-
 <div class="modal-overlay" id="logout-confirm-modal" onclick="closeModalOutside(event,'logout-confirm-modal')">
   <div class="modal" style="max-width:360px">
     <div class="modal-header"><div class="modal-title">🚪 ログアウト</div><button class="modal-close" onclick="closeModal('logout-confirm-modal')">✕</button></div>
@@ -709,7 +643,6 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;
 </div>
 
 <!-- アカウント削除 -->
-
 <div class="modal-overlay" id="delete-account-modal" onclick="closeModalOutside(event,'delete-account-modal')">
   <div class="modal" style="max-width:400px">
     <div class="modal-header"><div class="modal-title" style="color:var(--red)">⚠ アカウント削除</div><button class="modal-close" onclick="closeModal('delete-account-modal')">✕</button></div>
@@ -723,21 +656,18 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;
 </div>
 
 <!-- ピンモーダル -->
-
 <div class="modal-overlay" id="pins-modal" onclick="closeModalOutside(event,'pins-modal')">
   <div class="modal"><div class="modal-header"><div class="modal-title">📌 ピン留めメッセージ</div><button class="modal-close" onclick="closeModal('pins-modal')">✕</button></div>
   <div class="modal-body"><div id="pins-list"></div></div></div>
 </div>
 
 <!-- ブックマークモーダル -->
-
 <div class="modal-overlay" id="bookmarks-modal" onclick="closeModalOutside(event,'bookmarks-modal')">
   <div class="modal"><div class="modal-header"><div class="modal-title">🔖 ブックマーク</div><button class="modal-close" onclick="closeModal('bookmarks-modal')">✕</button></div>
   <div class="modal-body"><div id="bookmarks-list"></div></div></div>
 </div>
 
 <!-- DMサーチ -->
-
 <div class="modal-overlay" id="dm-search-modal" onclick="closeModalOutside(event,'dm-search-modal')">
   <div class="modal" style="max-width:400px">
     <div class="modal-header"><div class="modal-title">💬 ダイレクトメッセージ</div><button class="modal-close" onclick="closeModal('dm-search-modal')">✕</button></div>
@@ -749,7 +679,6 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;
 </div>
 
 <!-- 管理者パネル -->
-
 <div class="modal-overlay" id="admin-modal" onclick="closeModalOutside(event,'admin-modal')">
   <div class="modal wide">
     <div class="modal-header"><div class="modal-title">👑 管理者パネル</div><button class="modal-close" onclick="closeModal('admin-modal')">✕</button></div>
@@ -797,7 +726,6 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;
 </div>
 
 <!-- チャンネル作成/編集 -->
-
 <div class="modal-overlay" id="channel-edit-modal" onclick="closeModalOutside(event,'channel-edit-modal')">
   <div class="modal" style="max-width:420px">
     <div class="modal-header"><div class="modal-title" id="channel-edit-title">チャンネルを編集</div><button class="modal-close" onclick="closeModal('channel-edit-modal')">✕</button></div>
@@ -839,375 +767,397 @@ let searchDebounce = null;
 const bookmarkCache = new Set();
 
 const settings = { theme:'dark', fontSize:15, sound:true, notif:false, mentionOnly:false, sendKey:'enter',
-...JSON.parse(localStorage.getItem('nexus_settings') || '{}') };
+  ...JSON.parse(localStorage.getItem('nexus_settings') || '{}') };
 
 // ════ AUTH ════
 async function login() {
-const username = document.getElementById('login-username').value.trim();
-const password = document.getElementById('login-password').value;
-if (!username || !password) return showAuthError('ユーザー名とパスワードを入力してください');
-try {
-const r = await fetch(`${API}/api/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username, password}) });
-const d = await r.json();
-if (!r.ok) return showAuthError(d.error || 'ログインに失敗しました');
-localStorage.setItem('token', d.token);
-token = d.token;
-currentUser = d.user;
-startApp();
-} catch(e) { showAuthError('サーバーに接続できません'); }
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!username || !password) return showAuthError('ユーザー名とパスワードを入力してください');
+  try {
+    const r = await fetch(`${API}/api/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username, password}) });
+    const d = await r.json();
+    if (!r.ok) return showAuthError(d.error || 'ログインに失敗しました');
+    localStorage.setItem('token', d.token);
+    token = d.token;
+    currentUser = d.user;
+    startApp();
+  } catch(e) { showAuthError('サーバーに接続できません'); }
 }
 async function register() {
-const username = document.getElementById('reg-username').value.trim();
-const password = document.getElementById('reg-password').value;
-const inviteCode = document.getElementById('reg-invite').value.trim();
-if (!username || !password) return showAuthError('ユーザー名とパスワードを入力してください');
-try {
-const r = await fetch(`${API}/api/register`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username, password, inviteCode}) });
-const d = await r.json();
-if (!r.ok) {
-if (d.inviteRequired) document.getElementById('invite-code-field').style.display = '';
-return showAuthError(d.error || '登録に失敗しました');
-}
-localStorage.setItem('token', d.token);
-token = d.token;
-currentUser = d.user;
-startApp();
-} catch(e) { showAuthError('サーバーに接続できません'); }
+  const username = document.getElementById('reg-username').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const inviteCode = document.getElementById('reg-invite').value.trim();
+  if (!username || !password) return showAuthError('ユーザー名とパスワードを入力してください');
+  try {
+    const r = await fetch(`${API}/api/register`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username, password, inviteCode}) });
+    const d = await r.json();
+    if (!r.ok) {
+      if (d.inviteRequired) document.getElementById('invite-code-field').style.display = '';
+      return showAuthError(d.error || '登録に失敗しました');
+    }
+    localStorage.setItem('token', d.token);
+    token = d.token;
+    currentUser = d.user;
+    startApp();
+  } catch(e) { showAuthError('サーバーに接続できません'); }
 }
 function showAuthError(msg) { const el = document.getElementById('auth-error'); el.textContent = msg; el.classList.add('show'); }
 function switchTab(tab) {
-document.getElementById('login-form').style.display = tab === 'login' ? '' : 'none';
-document.getElementById('register-form').style.display = tab === 'register' ? '' : 'none';
-document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', (i===0) === (tab==='login')));
-document.getElementById('auth-error').classList.remove('show');
+  document.getElementById('login-form').style.display = tab === 'login' ? '' : 'none';
+  document.getElementById('register-form').style.display = tab === 'register' ? '' : 'none';
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', (i===0) === (tab==='login')));
+  document.getElementById('auth-error').classList.remove('show');
 }
 
 // ════ APP INIT ════
 async function startApp() {
-document.getElementById('auth-screen').style.display = 'none';
-document.getElementById('app').classList.add('visible');
-applySettings();
-await loadCurrentUser();
-initSocket();
-await loadChannels();
-renderDmList();
-renderVoiceChannelList();
-initDragDrop();
-initMobile();
-document.addEventListener('click', () => document.getElementById('status-menu').style.display = 'none', true);
-// ブックマークをキャッシュ
-loadBookmarkCache();
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+  applySettings();
+  await loadCurrentUser();
+  initSocket();
+  await loadChannels();
+  renderDmList();
+  initDragDrop();
+  initMobile();
+  document.addEventListener('click', () => document.getElementById('status-menu').style.display = 'none', true);
+  // ブックマークをキャッシュ
+  loadBookmarkCache();
 }
 
 async function loadCurrentUser() {
-try {
-const r = await fetch(`${API}/api/me`, { headers: { Authorization: `Bearer ${token}` } });
-if (r.ok) {
-currentUser = await r.json();
-keywordTags = currentUser.keywordNotifs || [];
-}
-} catch(e) {}
-document.getElementById('user-display-name').textContent = currentUser?.username || '--';
-document.getElementById('user-avatar-img').src = currentUser?.avatar || '';
-document.getElementById('user-role-tag').textContent = currentUser?.role || '';
-if (currentUser?.role === 'admin') {
-document.getElementById('admin-btn').style.display = '';
-document.getElementById('add-channel-btn').style.display = '';
-}
+  try {
+    const r = await fetch(`${API}/api/me`, { headers: { Authorization: `Bearer ${token}` } });
+    if (r.ok) {
+      currentUser = await r.json();
+      keywordTags = currentUser.keywordNotifs || [];
+    }
+  } catch(e) {}
+  document.getElementById('user-display-name').textContent = currentUser?.username || '—';
+  document.getElementById('user-avatar-img').src = currentUser?.avatar || '';
+  document.getElementById('user-role-tag').textContent = currentUser?.role || '';
+  if (currentUser?.role === 'admin') {
+    document.getElementById('admin-btn').style.display = '';
+    document.getElementById('add-channel-btn').style.display = '';
+  }
 }
 
 // ════ SOCKET ════
 function initSocket() {
-socket = io({ auth: { token } });
-socket.on('connect', () => console.log('Socket connected'));
-initVoiceSocketEvents();
-socket.on('connect_error', (e) => { if (e.message === 'Authentication error') { logout(); } });
-socket.on('force_logout', ({ reason }) => { alert(reason); logout(); });
-socket.on('muted', () => { isMutedLocally = true; document.getElementById('muted-banner').classList.add('show'); });
-socket.on('unmuted', () => { isMutedLocally = false; document.getElementById('muted-banner').classList.remove('show'); });
-socket.on('error_msg', ({ msg }) => showToastNotif('⚠️', msg, null));
+  socket = io({ auth: { token } });
+  socket.on('connect', () => console.log('Socket connected'));
+  socket.on('connect_error', (e) => { if (e.message === 'Authentication error') { logout(); } });
+  socket.on('force_logout', ({ reason }) => { alert(reason); logout(); });
+  socket.on('muted', () => { isMutedLocally = true; document.getElementById('muted-banner').classList.add('show'); });
+  socket.on('unmuted', () => { isMutedLocally = false; document.getElementById('muted-banner').classList.remove('show'); });
+  socket.on('error_msg', ({ msg }) => showToastNotif('⚠️', msg, null));
 
-socket.on('online_users', (users) => {
-onlineUsersList = users;
-renderMembers(users);
-document.getElementById('online-count').textContent = users.length;
-});
+  socket.on('online_users', (users) => {
+    onlineUsersList = users;
+    renderMembers(users);
+    document.getElementById('online-count').textContent = users.length;
+  });
 
-socket.on('message', (msg) => {
-if (channelLoading[msg.channelId]) { (pendingSocketMsgs[msg.channelId] = pendingSocketMsgs[msg.channelId] || []).push(msg); return; }
-if (msg.channelId === currentChannel) { renderMessageToDom(msg, true); scrollToBottom(); }
-else { markUnread(msg.channelId); }
-// キーワード通知（サーバーからのkeyword_matchでも来るが念のためクライアントでも）
-if (msg.author !== currentUser?.username) checkKeywordNotif(msg);
-});
+  socket.on('message', (msg) => {
+    if (channelLoading[msg.channelId]) { (pendingSocketMsgs[msg.channelId] = pendingSocketMsgs[msg.channelId] || []).push(msg); return; }
+    if (msg.channelId === currentChannel) { renderMessageToDom(msg, true); scrollToBottom(); }
+    else { markUnread(msg.channelId); }
+    // キーワード通知（サーバーからのkeyword_matchでも来るが念のためクライアントでも）
+    if (msg.author !== currentUser?.username) checkKeywordNotif(msg);
+  });
 
-socket.on('keyword_match', ({ keyword, msg, channelId }) => {
-showToastNotif('🔑', `キーワード「${keyword}」に一致`, msg.content, () => joinChannel(channelId));
-});
+  socket.on('keyword_match', ({ keyword, msg, channelId }) => {
+    showToastNotif('🔑', `キーワード「${keyword}」に一致`, msg.content, () => joinChannel(channelId));
+  });
 
-socket.on('message_edited', ({ msgId, channelId, content, editedAt }) => {
-const el = document.getElementById(`msg-${msgId}`);
-if (el) {
-el.querySelector('.msg-content').innerHTML = renderContent(content);
-let ed = el.querySelector('.msg-edited');
-if (!ed) { ed = document.createElement('span'); ed.className = 'msg-edited'; el.querySelector('.msg-header')?.appendChild(ed); }
-ed.textContent = ` (編集済 ${formatTime(editedAt)})`;
-}
-});
+  socket.on('message_edited', ({ msgId, channelId, content, editedAt }) => {
+    const el = document.getElementById(`msg-${msgId}`);
+    if (el) {
+      el.querySelector('.msg-content').innerHTML = renderContent(content);
+      let ed = el.querySelector('.msg-edited');
+      if (!ed) { ed = document.createElement('span'); ed.className = 'msg-edited'; el.querySelector('.msg-header')?.appendChild(ed); }
+      ed.textContent = ` (編集済 ${formatTime(editedAt)})`;
+    }
+  });
 
-socket.on('message_deleted', ({ msgId }) => {
-document.getElementById(`msg-${msgId}`)?.remove();
-});
+  socket.on('message_deleted', ({ msgId }) => {
+    document.getElementById(`msg-${msgId}`)?.remove();
+  });
 
-socket.on('pin_update', ({ channelId, pins }) => { if (channelId === currentChannel) {} });
+  socket.on('pin_update', ({ channelId, pins }) => { if (channelId === currentChannel) {} });
 
-socket.on('reaction_update', ({ msgId, reactions }) => {
-const el = document.getElementById(`msg-${msgId}`);
-if (el) renderReactions(el, msgId, reactions, currentChannel || currentDmRoom);
-});
+  socket.on('reaction_update', ({ msgId, reactions }) => {
+    const el = document.getElementById(`msg-${msgId}`);
+    if (el) renderReactions(el, msgId, reactions, currentChannel || currentDmRoom);
+  });
 
-socket.on('typing', ({ username, isTyping }) => {
-if (username === currentUser?.username) return;
-clearTimeout(typingTimers[username]);
-const bar = document.getElementById('typing-bar');
-if (isTyping) {
-typingTimers[username] = setTimeout(() => { delete typingTimers[username]; updateTypingBar(); }, 3000);
-} else { delete typingTimers[username]; }
-updateTypingBar();
-});
+  socket.on('typing', ({ username, isTyping }) => {
+    if (username === currentUser?.username) return;
+    clearTimeout(typingTimers[username]);
+    const bar = document.getElementById('typing-bar');
+    if (isTyping) {
+      typingTimers[username] = setTimeout(() => { delete typingTimers[username]; updateTypingBar(); }, 3000);
+    } else { delete typingTimers[username]; }
+    updateTypingBar();
+  });
 
-socket.on('dm_message', (msg) => {
-const roomId = msg.channelId;
-if (currentDmRoom === roomId) { renderMessageToDom(msg, true); scrollToBottom(); markDmRead(msg); }
-else {
-const other = roomId.split('__').find(u => u !== currentUser?.username);
-showToastNotif('💬', other, msg.content, () => openDm(other));
-if (!openDmRooms.find(r => r.roomId === roomId)) {
-openDmRooms.push({ roomId, otherUser: other });
-localStorage.setItem('nexus_dmRooms', JSON.stringify(openDmRooms));
-renderDmList();
-}
-}
-});
+  socket.on('dm_message', (msg) => {
+    const roomId = msg.channelId;
+    if (currentDmRoom === roomId) { renderMessageToDom(msg, true); scrollToBottom(); markDmRead(msg); }
+    else {
+      const other = roomId.split('__').find(u => u !== currentUser?.username);
+      showToastNotif('💬', other, msg.content, () => openDm(other));
+      if (!openDmRooms.find(r => r.roomId === roomId)) {
+        openDmRooms.push({ roomId, otherUser: other });
+        localStorage.setItem('nexus_dmRooms', JSON.stringify(openDmRooms));
+        renderDmList();
+      }
+    }
+  });
 
-socket.on('dm_read_update', ({ roomId, msgId, readBy }) => {
-const el = document.querySelector(`#msg-${msgId} .dm-read-receipt`);
-if (el) { const other = roomId.split('__').find(u => u !== currentUser?.username); if (readBy.includes(other)) { el.textContent = '✓✓ 既読'; el.classList.add('read'); } }
-});
+  socket.on('dm_read_update', ({ roomId, msgId, readBy }) => {
+    const el = document.querySelector(`#msg-${msgId} .dm-read-receipt`);
+    if (el) { const other = roomId.split('__').find(u => u !== currentUser?.username); if (readBy.includes(other)) { el.textContent = '✓✓ 既読'; el.classList.add('read'); } }
+  });
 
-socket.on('role_changed', ({ role }) => { currentUser.role = role; document.getElementById('user-role-tag').textContent = role; if (role === 'admin') { document.getElementById('admin-btn').style.display = ''; document.getElementById('add-channel-btn').style.display = ''; } });
-socket.on('user_role_updated', () => renderMembers(onlineUsersList));
-socket.on('user_avatar_updated', ({ username, avatar }) => {
-if (username === currentUser?.username) { currentUser.avatar = avatar; document.getElementById('user-avatar-img').src = avatar; }
-document.querySelectorAll('.msg').forEach(el => { if (el.querySelector('.msg-author')?.textContent === username) { const img = el.querySelector('.msg-avatar img'); if (img) img.src = avatar; } });
-});
-socket.on('user_banned', ({ username }) => { if (username === currentUser?.username) { alert('BANされました'); logout(); } renderMembers(onlineUsersList); });
-socket.on('channel_updated', ({ action, channel, channelId }) => {
-if (action === 'created') { channels_state[channel.id] = channel; renderChannelList(); }
-else if (action === 'updated') { if (channels_state[channel.id]) Object.assign(channels_state[channel.id], channel); renderChannelList(); if (channel.id === currentChannel) { document.getElementById('chat-header-topic').textContent = channel.topic || ''; } }
-else if (action === 'deleted') { delete channels_state[channelId]; renderChannelList(); if (currentChannel === channelId) joinChannel('general'); }
-});
-socket.on('custom_emojis', (list) => { customEmojiList = list; });
-socket.on('custom_emoji_updated', ({ name, url }) => { const idx = customEmojiList.findIndex(e => e.name === name); if (idx >= 0) customEmojiList[idx].url = url; else customEmojiList.push({ name, url }); });
-socket.on('custom_emoji_deleted', ({ name }) => { customEmojiList = customEmojiList.filter(e => e.name !== name); });
+  socket.on('role_changed', ({ role }) => { currentUser.role = role; document.getElementById('user-role-tag').textContent = role; if (role === 'admin') { document.getElementById('admin-btn').style.display = ''; document.getElementById('add-channel-btn').style.display = ''; } });
+  socket.on('user_role_updated', () => renderMembers(onlineUsersList));
+  socket.on('user_avatar_updated', ({ username, avatar }) => {
+    if (username === currentUser?.username) { currentUser.avatar = avatar; document.getElementById('user-avatar-img').src = avatar; }
+    document.querySelectorAll('.msg').forEach(el => { if (el.querySelector('.msg-author')?.textContent === username) { const img = el.querySelector('.msg-avatar img'); if (img) img.src = avatar; } });
+  });
+  socket.on('user_banned', ({ username }) => { if (username === currentUser?.username) { alert('BANされました'); logout(); } renderMembers(onlineUsersList); });
+  socket.on('channel_updated', ({ action, channel, channelId }) => {
+    if (action === 'created') { channels_state[channel.id] = channel; renderChannelList(); }
+    else if (action === 'updated') { if (channels_state[channel.id]) Object.assign(channels_state[channel.id], channel); renderChannelList(); if (channel.id === currentChannel) { document.getElementById('chat-header-topic').textContent = channel.topic || ''; } }
+    else if (action === 'deleted') { delete channels_state[channelId]; renderChannelList(); if (currentChannel === channelId) joinChannel('general'); }
+  });
+  socket.on('custom_emojis', (list) => { customEmojiList = list; });
+  socket.on('custom_emoji_updated', ({ name, url }) => { const idx = customEmojiList.findIndex(e => e.name === name); if (idx >= 0) customEmojiList[idx].url = url; else customEmojiList.push({ name, url }); });
+  socket.on('custom_emoji_deleted', ({ name }) => { customEmojiList = customEmojiList.filter(e => e.name !== name); });
 }
 
 // ════ CHANNELS ════
 let channels_state = {};
 async function loadChannels() {
-const r = await fetch(`${API}/api/channels`, { headers: { Authorization: `Bearer ${token}` } });
-if (!r.ok) return;
-const list = await r.json();
-channels_state = {};
-list.forEach(ch => channels_state[ch.id] = ch);
-renderChannelList();
-const first = list[0]?.id || 'general';
-joinChannel(first);
+  const r = await fetch(`${API}/api/channels`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!r.ok) return;
+  const list = await r.json();
+  channels_state = {};
+  list.forEach(ch => channels_state[ch.id] = ch);
+  renderChannelList();
+  const first = list[0]?.id || 'general';
+  joinChannel(first);
 }
 
 function renderChannelList() {
-const list = document.getElementById('channel-list');
-list.innerHTML = Object.values(channels_state).map(ch => ` <div class="ch-item${ch.id === currentChannel ? ' active' : ''}${unreadSet.has(ch.id) ? ' unread' : ''}" id="ch-item-${ch.id}" onclick="joinChannel('${ch.id}')"> <span class="ch-icon">${ch.readonly ? '📢' : '#'}</span> <span style="flex:1">${escHtml(ch.name)}</span> ${ch.readonly ? '<span class="ch-readonly-badge">RO</span>' : ''} <span class="unread-badge">●</span> </div>`).join('');
+  const list = document.getElementById('channel-list');
+  list.innerHTML = Object.values(channels_state).map(ch => `
+    <div class="ch-item${ch.id === currentChannel ? ' active' : ''}${unreadSet.has(ch.id) ? ' unread' : ''}" id="ch-item-${ch.id}" onclick="joinChannel('${ch.id}')">
+      <span class="ch-icon">${ch.readonly ? '📢' : '#'}</span>
+      <span style="flex:1">${escHtml(ch.name)}</span>
+      ${ch.readonly ? '<span class="ch-readonly-badge">RO</span>' : ''}
+      <span class="unread-badge">●</span>
+    </div>`).join('');
 }
 
 const unreadSet = new Set();
 function markUnread(channelId) {
-if (channelId === currentChannel) return;
-unreadSet.add(channelId);
-document.getElementById(`ch-item-${channelId}`)?.classList.add('unread');
+  if (channelId === currentChannel) return;
+  unreadSet.add(channelId);
+  document.getElementById(`ch-item-${channelId}`)?.classList.add('unread');
 }
 
 async function joinChannel(channelId) {
-if (!channels_state[channelId] && channelId !== 'general') return;
-currentChannel = channelId;
-currentDmRoom  = null;
-unreadSet.delete(channelId);
+  if (!channels_state[channelId] && channelId !== 'general') return;
+  currentChannel = channelId;
+  currentDmRoom  = null;
+  unreadSet.delete(channelId);
 
-const gen = (joinGen[channelId] = (joinGen[channelId] || 0) + 1);
-const ch = channels_state[channelId] || { name: channelId, topic: '' };
+  const gen = (joinGen[channelId] = (joinGen[channelId] || 0) + 1);
+  const ch = channels_state[channelId] || { name: channelId, topic: '' };
 
-document.getElementById('chat-header-icon').textContent = ch.readonly ? '📢' : '#';
-document.getElementById('chat-header-name').textContent = ch.name;
-document.getElementById('chat-header-topic').textContent = ch.topic || '';
-document.getElementById('msg-input').placeholder = `#${ch.name} にメッセージを送信`;
-document.getElementById('welcome-title').textContent = `#${ch.name} へようこそ！`;
-document.getElementById('chat-header-sep').style.display = ch.topic ? '' : 'none';
-document.getElementById('input-bar').style.display = '';
+  document.getElementById('chat-header-icon').textContent = ch.readonly ? '📢' : '#';
+  document.getElementById('chat-header-name').textContent = ch.name;
+  document.getElementById('chat-header-topic').textContent = ch.topic || '';
+  document.getElementById('msg-input').placeholder = `#${ch.name} にメッセージを送信`;
+  document.getElementById('welcome-title').textContent = `#${ch.name} へようこそ！`;
+  document.getElementById('chat-header-sep').style.display = ch.topic ? '' : 'none';
+  document.getElementById('input-bar').style.display = '';
 
-renderChannelList();
-socket?.emit('join_channel', channelId);
-closeDrawers();
+  renderChannelList();
+  socket?.emit('join_channel', channelId);
+  closeDrawers();
 
-channelLoading[channelId] = true;
-pendingSocketMsgs[channelId] = [];
+  channelLoading[channelId] = true;
+  pendingSocketMsgs[channelId] = [];
 
-const msgEl = document.getElementById('messages');
-msgEl.innerHTML = `<div class="welcome-msg"><div class="welcome-icon">${ch.readonly ? '📢' : '#'}</div><div class="welcome-title" id="welcome-title">#${escHtml(ch.name)} へようこそ！</div><div class="welcome-sub">これはチャンネルの始まりです。</div></div>`;
+  const msgEl = document.getElementById('messages');
+  msgEl.innerHTML = `<div class="welcome-msg"><div class="welcome-icon">${ch.readonly ? '📢' : '#'}</div><div class="welcome-title" id="welcome-title">#${escHtml(ch.name)} へようこそ！</div><div class="welcome-sub">これはチャンネルの始まりです。</div></div>`;
 
-try {
-const r = await fetch(`${API}/api/channels/${channelId}/messages`, { headers: { Authorization: `Bearer ${token}` } });
-if (gen !== joinGen[channelId]) return;
-const messages = r.ok ? await r.json() : [];
-const serverIds = new Set(messages.map(m => m.id));
-const buffered = (pendingSocketMsgs[channelId] || []).filter(m => !serverIds.has(m.id));
-const allMsgs = [...messages, ...buffered].sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp));
-allMessages[channelId] = allMsgs;
-msgEl.innerHTML = `<div class="welcome-msg"><div class="welcome-icon">${ch.readonly ? '📢' : '#'}</div><div class="welcome-title">#${escHtml(ch.name)} へようこそ！</div><div class="welcome-sub">これはチャンネルの始まりです。</div></div>`;
-let prevMsg = null;
-allMsgs.forEach(m => { renderMessageToDom(m, false, prevMsg); prevMsg = m; });
-scrollToBottom();
-} finally {
-channelLoading[channelId] = false;
-pendingSocketMsgs[channelId] = [];
-}
+  try {
+    const r = await fetch(`${API}/api/channels/${channelId}/messages`, { headers: { Authorization: `Bearer ${token}` } });
+    if (gen !== joinGen[channelId]) return;
+    const messages = r.ok ? await r.json() : [];
+    const serverIds = new Set(messages.map(m => m.id));
+    const buffered = (pendingSocketMsgs[channelId] || []).filter(m => !serverIds.has(m.id));
+    const allMsgs = [...messages, ...buffered].sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp));
+    allMessages[channelId] = allMsgs;
+    msgEl.innerHTML = `<div class="welcome-msg"><div class="welcome-icon">${ch.readonly ? '📢' : '#'}</div><div class="welcome-title">#${escHtml(ch.name)} へようこそ！</div><div class="welcome-sub">これはチャンネルの始まりです。</div></div>`;
+    let prevMsg = null;
+    allMsgs.forEach(m => { renderMessageToDom(m, false, prevMsg); prevMsg = m; });
+    scrollToBottom();
+  } finally {
+    channelLoading[channelId] = false;
+    pendingSocketMsgs[channelId] = [];
+  }
 }
 
 // ════ MESSAGE RENDER ════
 function renderMessageToDom(msg, append = false, prevMsg = null) {
-const msgEl = document.getElementById('messages');
-const memberData = (window._allMembers || []).find(m => m.username === msg.author);
-const avatar = memberData?.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(msg.author)}`;
+  const msgEl = document.getElementById('messages');
+  const memberData = (window._allMembers || []).find(m => m.username === msg.author);
+  const avatar = memberData?.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(msg.author)}`;
 
-if (msg.type === 'system') return;
+  if (msg.type === 'system') return;
 
-// グルーピング: 同じ著者の連続メッセージ
-let grouped = false;
-if (prevMsg === null && append) {
-const lastEl = msgEl.lastElementChild;
-if (lastEl?.dataset.author === msg.author && lastEl?.dataset.type !== 'system') {
-const lastTs = new Date(lastEl.dataset.timestamp).getTime();
-if (Date.now() - lastTs < 5 * 60000) grouped = true;
-}
-} else if (prevMsg && prevMsg.author === msg.author) {
-const diff = new Date(msg.timestamp) - new Date(prevMsg.timestamp);
-if (diff < 5 * 60000) grouped = true;
-}
+  // グルーピング: 同じ著者の連続メッセージ
+  let grouped = false;
+  if (prevMsg === null && append) {
+    const lastEl = msgEl.lastElementChild;
+    if (lastEl?.dataset.author === msg.author && lastEl?.dataset.type !== 'system') {
+      const lastTs = new Date(lastEl.dataset.timestamp).getTime();
+      if (Date.now() - lastTs < 5 * 60000) grouped = true;
+    }
+  } else if (prevMsg && prevMsg.author === msg.author) {
+    const diff = new Date(msg.timestamp) - new Date(prevMsg.timestamp);
+    if (diff < 5 * 60000) grouped = true;
+  }
 
-const isOwn = msg.author === currentUser?.username;
-const isMention = msg.content && currentUser && msg.content.includes('@' + currentUser.username);
-const isThread = msg.threadOf;
-const canEdit = isOwn;
-const canDel = isOwn || ['admin','moderator'].includes(currentUser?.role);
-const canPin = ['admin','moderator'].includes(currentUser?.role) && currentChannel;
-const isBm = bookmarkCache.has(msg.id);
+  const isOwn = msg.author === currentUser?.username;
+  const isMention = msg.content && currentUser && msg.content.includes('@' + currentUser.username);
+  const isThread = msg.threadOf;
+  const canEdit = isOwn;
+  const canDel = isOwn || ['admin','moderator'].includes(currentUser?.role);
+  const canPin = ['admin','moderator'].includes(currentUser?.role) && currentChannel;
+  const isBm = bookmarkCache.has(msg.id);
 
-const el = document.createElement('div');
-el.className = `msg${grouped ? ' grouped' : ''}${isMention ? ' mention-highlight' : ''}${isThread ? ' thread-reply' : ''}`;
-el.id = `msg-${msg.id}`;
-el.dataset.author = msg.author;
-el.dataset.timestamp = msg.timestamp;
-el.dataset.type = msg.type;
+  const el = document.createElement('div');
+  el.className = `msg${grouped ? ' grouped' : ''}${isMention ? ' mention-highlight' : ''}${isThread ? ' thread-reply' : ''}`;
+  el.id = `msg-${msg.id}`;
+  el.dataset.author = msg.author;
+  el.dataset.timestamp = msg.timestamp;
+  el.dataset.type = msg.type;
 
-let contentHtml = '';
-let msgUrls = [];
-if (msg.type === 'file' && msg.fileInfo) {
-const fi = msg.fileInfo;
-const isImage = fi.mimetype?.startsWith('image/') || /.(png|jpe?g|gif|webp)$/i.test(fi.filename || '');
-if (isImage) {
-contentHtml = `<img class="img-preview" src="${escHtml(fi.url)}" alt="${escHtml(fi.filename)}" onclick="openLightbox('${escHtml(fi.url)}')" loading="lazy" />`;
-} else {
-contentHtml = `<a class="file-attachment" href="${escHtml(fi.url)}" target="_blank" download="${escHtml(fi.filename)}"> <div class="file-icon">📎</div> <div class="file-info"><div class="file-name">${escHtml(fi.filename)}</div><div class="file-size">${formatBytes(fi.size)}</div></div> </a>`;
-}
-} else {
-const _rc = renderContent(msg.content || '');
-contentHtml = _rc.html;
-msgUrls = _rc.urls || [];
-}
+  let contentHtml = '';
+  if (msg.type === 'file' && msg.fileInfo) {
+    const fi = msg.fileInfo;
+    const isImage = fi.mimetype?.startsWith('image/') || /\.(png|jpe?g|gif|webp)$/i.test(fi.filename || '');
+    if (isImage) {
+      contentHtml = `<img class="img-preview" src="${escHtml(fi.url)}" alt="${escHtml(fi.filename)}" onclick="openLightbox('${escHtml(fi.url)}')" loading="lazy" />`;
+    } else {
+      contentHtml = `<a class="file-attachment" href="${escHtml(fi.url)}" target="_blank" download="${escHtml(fi.filename)}">
+        <div class="file-icon">📎</div>
+        <div class="file-info"><div class="file-name">${escHtml(fi.filename)}</div><div class="file-size">${formatBytes(fi.size)}</div></div>
+      </a>`;
+    }
+  } else {
+    contentHtml = renderContent(msg.content || '');
+  }
 
-const threadInfo = msg.threadOf ? `<div style="font-size:12px;color:var(--text-3);margin-bottom:3px">↩ スレッド返信</div>` : '';
+  const threadInfo = msg.threadOf ? `<div style="font-size:12px;color:var(--text-3);margin-bottom:3px">↩ スレッド返信</div>` : '';
 
-el.innerHTML = `<div class="msg-avatar"><img src="${escHtml(avatar)}" alt="${escHtml(msg.author)}" onclick="openDm('${escHtml(msg.author)}')" loading="lazy" /></div> <div class="msg-body"> <div class="msg-header"> <span class="msg-author" onclick="openDm('${escHtml(msg.author)}')">${escHtml(msg.author)}</span> <span class="msg-time">${formatTime(msg.timestamp)}</span> ${msg.edited ?`<span class="msg-edited">(編集済)</span>`: ''} </div> ${threadInfo} <div class="msg-content">${contentHtml}</div> ${msg.type === 'text' ?`<div class="msg-edit-area"><textarea class="msg-edit-input" rows="1">${escHtml(msg.content||'')}</textarea><div class="msg-edit-btns"><button class="edit-save-btn" onclick="saveEdit('${msg.id}','${escHtml(currentChannel||currentDmRoom)}')">保存</button><button class="edit-cancel-btn" onclick="cancelEdit('${msg.id}')">キャンセル</button></div></div>`: ''} <div class="reactions" id="reactions-${msg.id}"></div> ${msg.isDM ?`<div class="dm-read-receipt" id="dr-${msg.id}"></div>`: ''} </div> <div class="msg-actions"> ${msg.type === 'text' ?`<button class="msg-action-btn" title="返信" onclick="startReply('${msg.id}','${escHtml(msg.author)}','${escHtml((msg.content||'').replace(/'/g,"\'"))}')">↩</button>`: ''} <button class="msg-action-btn" title="リアクション" onclick="toggleReactionPicker('${msg.id}')">😊</button> <button class="msg-action-btn" title="${isBm ? 'ブックマーク解除' : 'ブックマーク'}" id="bm-btn-${msg.id}" onclick="toggleBookmark('${msg.id}','${escHtml(msg.author)}','${escHtml((msg.content||'').substring(0,100).replace(/'/g,"\\'"))}','${msg.timestamp}')">${isBm ? '🔖' : '🏷'}</button> ${canEdit && msg.type === 'text' ?`<button class="msg-action-btn" title="編集" onclick="startEdit('${msg.id}')">✏</button>`: ''} ${canPin ?`<button class="msg-action-btn" title="ピン留め" onclick="pinMessage('${msg.id}')">📌</button>`: ''} ${canDel ?`<button class="msg-action-btn danger" title="削除" onclick="deleteMessage('${msg.id}','${escHtml(currentChannel||currentDmRoom)}')">🗑</button>` : ''} </div>`;
+  el.innerHTML = `
+    <div class="msg-avatar"><img src="${escHtml(avatar)}" alt="${escHtml(msg.author)}" onclick="openDm('${escHtml(msg.author)}')" loading="lazy" /></div>
+    <div class="msg-body">
+      <div class="msg-header">
+        <span class="msg-author" onclick="openDm('${escHtml(msg.author)}')">${escHtml(msg.author)}</span>
+        <span class="msg-time">${formatTime(msg.timestamp)}</span>
+        ${msg.edited ? `<span class="msg-edited">(編集済)</span>` : ''}
+      </div>
+      ${threadInfo}
+      <div class="msg-content">${contentHtml}</div>
+      ${msg.type === 'text' ? `<div class="msg-edit-area"><textarea class="msg-edit-input" rows="1">${escHtml(msg.content||'')}</textarea><div class="msg-edit-btns"><button class="edit-save-btn" onclick="saveEdit('${msg.id}','${escHtml(currentChannel||currentDmRoom)}')">保存</button><button class="edit-cancel-btn" onclick="cancelEdit('${msg.id}')">キャンセル</button></div></div>` : ''}
+      <div class="reactions" id="reactions-${msg.id}"></div>
+      ${msg.isDM ? `<div class="dm-read-receipt" id="dr-${msg.id}"></div>` : ''}
+    </div>
+    <div class="msg-actions">
+      ${msg.type === 'text' ? `<button class="msg-action-btn" title="返信" onclick="startReply('${msg.id}','${escHtml(msg.author)}','${escHtml((msg.content||'').replace(/'/g,"\\'"))}')">↩</button>` : ''}
+      <button class="msg-action-btn" title="リアクション" onclick="toggleReactionPicker('${msg.id}')">😊</button>
+      <button class="msg-action-btn" title="${isBm ? 'ブックマーク解除' : 'ブックマーク'}" id="bm-btn-${msg.id}" onclick="toggleBookmark('${msg.id}','${escHtml(msg.author)}','${escHtml((msg.content||'').substring(0,100).replace(/'/g,"\\'"))}','${msg.timestamp}')">${isBm ? '🔖' : '🏷'}</button>
+      ${canEdit && msg.type === 'text' ? `<button class="msg-action-btn" title="編集" onclick="startEdit('${msg.id}')">✏</button>` : ''}
+      ${canPin ? `<button class="msg-action-btn" title="ピン留め" onclick="pinMessage('${msg.id}')">📌</button>` : ''}
+      ${canDel ? `<button class="msg-action-btn danger" title="削除" onclick="deleteMessage('${msg.id}','${escHtml(currentChannel||currentDmRoom)}')">🗑</button>` : ''}
+    </div>`;
 
-if (msg.reactions && Object.keys(msg.reactions).length > 0) renderReactions(el, msg.id, msg.reactions, currentChannel || currentDmRoom);
+  if (msg.reactions && Object.keys(msg.reactions).length > 0) renderReactions(el, msg.id, msg.reactions, currentChannel || currentDmRoom);
 
-if (append) msgEl.appendChild(el);
-else msgEl.appendChild(el);
-
-// OGP preview
-if (msgUrls && msgUrls.length > 0) {
-  msgUrls.forEach(function(url) { fetchAndRenderOgp(el, url); });
-}
+  if (append) msgEl.appendChild(el);
+  else msgEl.appendChild(el);
 }
 
 function renderReactions(el, msgId, reactions, channelId) {
-const container = el.querySelector ? el.querySelector(`#reactions-${msgId}`) : document.getElementById(`reactions-${msgId}`);
-if (!container) return;
-container.innerHTML = Object.entries(reactions).map(([emoji, users]) => {
-const reacted = users.includes(currentUser?.username);
-return `<span class="reaction-pill${reacted ? ' reacted' : ''}" onclick="socket.emit('add_reaction',{msgId:'${msgId}',emoji:'${escHtml(emoji)}',channelId:'${escHtml(channelId)}'})"> ${emoji} <span class="reaction-count">${users.length}</span> </span>`;
-}).join('');
+  const container = el.querySelector ? el.querySelector(`#reactions-${msgId}`) : document.getElementById(`reactions-${msgId}`);
+  if (!container) return;
+  container.innerHTML = Object.entries(reactions).map(([emoji, users]) => {
+    const reacted = users.includes(currentUser?.username);
+    return `<span class="reaction-pill${reacted ? ' reacted' : ''}" onclick="socket.emit('add_reaction',{msgId:'${msgId}',emoji:'${escHtml(emoji)}',channelId:'${escHtml(channelId)}'})">
+      ${emoji} <span class="reaction-count">${users.length}</span>
+    </span>`;
+  }).join('');
 }
 
 // ════ SEND ════
 function sendMessage() {
-const input = document.getElementById('msg-input');
-const content = input.value.trim();
-if (!content) return;
-if (isMutedLocally) return;
+  const input = document.getElementById('msg-input');
+  const content = input.value.trim();
+  if (!content) return;
+  if (isMutedLocally) return;
 
-if (currentDmRoom) {
-const other = currentDmRoom.split('__').find(u => u !== currentUser?.username);
-socket.emit('send_dm', { toUsername: other, content });
-} else if (currentChannel) {
-socket.emit('send_message', { channelId: currentChannel, content, threadOf: replyTarget?.msgId || null });
-}
-input.value = '';
-input.style.height = '24px';
-cancelReply();
+  if (currentDmRoom) {
+    const other = currentDmRoom.split('__').find(u => u !== currentUser?.username);
+    socket.emit('send_dm', { toUsername: other, content });
+  } else if (currentChannel) {
+    socket.emit('send_message', { channelId: currentChannel, content, threadOf: replyTarget?.msgId || null });
+  }
+  input.value = '';
+  input.style.height = '24px';
+  cancelReply();
 }
 
 function startReply(msgId, author, content) {
-replyTarget = { msgId, author, content };
-const prev = document.getElementById('reply-preview');
-prev.classList.add('show');
-document.getElementById('reply-preview-text').textContent = `${author}: ${content}`;
-document.getElementById('msg-input').focus();
+  replyTarget = { msgId, author, content };
+  const prev = document.getElementById('reply-preview');
+  prev.classList.add('show');
+  document.getElementById('reply-preview-text').textContent = `${author}: ${content}`;
+  document.getElementById('msg-input').focus();
 }
 function cancelReply() { replyTarget = null; document.getElementById('reply-preview').classList.remove('show'); }
 
 function deleteMessage(msgId, channelId) {
-socket.emit('delete_message', { msgId, channelId });
+  socket.emit('delete_message', { msgId, channelId });
 }
 
 function startEdit(msgId) {
-const el = document.getElementById(`msg-${msgId}`);
-if (!el) return;
-el.querySelector('.msg-content').style.display = 'none';
-const area = el.querySelector('.msg-edit-area');
-if (area) { area.classList.add('active'); const ta = area.querySelector('textarea'); autoResize(ta); ta.focus(); }
+  const el = document.getElementById(`msg-${msgId}`);
+  if (!el) return;
+  el.querySelector('.msg-content').style.display = 'none';
+  const area = el.querySelector('.msg-edit-area');
+  if (area) { area.classList.add('active'); const ta = area.querySelector('textarea'); autoResize(ta); ta.focus(); }
 }
 function cancelEdit(msgId) {
-const el = document.getElementById(`msg-${msgId}`);
-if (!el) return;
-el.querySelector('.msg-content').style.display = '';
-el.querySelector('.msg-edit-area')?.classList.remove('active');
+  const el = document.getElementById(`msg-${msgId}`);
+  if (!el) return;
+  el.querySelector('.msg-content').style.display = '';
+  el.querySelector('.msg-edit-area')?.classList.remove('active');
 }
 function saveEdit(msgId, channelId) {
-const el = document.getElementById(`msg-${msgId}`);
-const content = el?.querySelector('.msg-edit-input')?.value.trim();
-if (!content) return;
-socket.emit('edit_message', { msgId, channelId, content });
-cancelEdit(msgId);
+  const el = document.getElementById(`msg-${msgId}`);
+  const content = el?.querySelector('.msg-edit-input')?.value.trim();
+  if (!content) return;
+  socket.emit('edit_message', { msgId, channelId, content });
+  cancelEdit(msgId);
 }
 
 function pinMessage(msgId) { socket.emit('pin_message', { msgId, channelId: currentChannel }); }
@@ -1215,285 +1165,333 @@ function pinMessage(msgId) { socket.emit('pin_message', { msgId, channelId: curr
 // ════ REPLY REACTION PICKER ════
 let reactionPickerOpen = null;
 function toggleReactionPicker(msgId) {
-if (reactionPickerOpen === msgId) { closeReactionPicker(); return; }
-closeReactionPicker();
-const el = document.getElementById(`msg-${msgId}`);
-if (!el) return;
-const picker = document.createElement('div');
-picker.id = 'reaction-quick-picker';
-picker.style.cssText = 'position:absolute;background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;padding:8px;display:flex;flex-wrap:wrap;gap:4px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,0.4);';
-const quickEmojis = ['👍','❤️','😂','😮','😢','🔥','✅','🎉','👀','🙏'];
-quickEmojis.forEach(e => {
-const btn = document.createElement('button');
-btn.textContent = e;
-btn.style.cssText = 'border:none;background:none;font-size:20px;cursor:pointer;padding:4px;border-radius:8px;transition:background 0.1s;';
-btn.onclick = () => { socket.emit('add_reaction', { msgId, emoji: e, channelId: currentChannel || currentDmRoom }); closeReactionPicker(); };
-picker.appendChild(btn);
-});
-el.style.position = 'relative';
-el.appendChild(picker);
-reactionPickerOpen = msgId;
-setTimeout(() => document.addEventListener('click', closeReactionPicker, { once: true }), 0);
+  if (reactionPickerOpen === msgId) { closeReactionPicker(); return; }
+  closeReactionPicker();
+  const el = document.getElementById(`msg-${msgId}`);
+  if (!el) return;
+  const picker = document.createElement('div');
+  picker.id = 'reaction-quick-picker';
+  picker.style.cssText = 'position:absolute;background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;padding:8px;display:flex;flex-wrap:wrap;gap:4px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,0.4);';
+  const quickEmojis = ['👍','❤️','😂','😮','😢','🔥','✅','🎉','👀','🙏'];
+  quickEmojis.forEach(e => {
+    const btn = document.createElement('button');
+    btn.textContent = e;
+    btn.style.cssText = 'border:none;background:none;font-size:20px;cursor:pointer;padding:4px;border-radius:8px;transition:background 0.1s;';
+    btn.onclick = () => { socket.emit('add_reaction', { msgId, emoji: e, channelId: currentChannel || currentDmRoom }); closeReactionPicker(); };
+    picker.appendChild(btn);
+  });
+  el.style.position = 'relative';
+  el.appendChild(picker);
+  reactionPickerOpen = msgId;
+  setTimeout(() => document.addEventListener('click', closeReactionPicker, { once: true }), 0);
 }
 function closeReactionPicker() { document.getElementById('reaction-quick-picker')?.remove(); reactionPickerOpen = null; }
 
 // ════ DM ════
 let dmAllMessages = {};
 function renderDmList() {
-const list = document.getElementById('dm-list');
-list.innerHTML = openDmRooms.map(({ roomId, otherUser }) => ` <div class="ch-item${currentDmRoom === roomId ? ' active' : ''}" onclick="openDm('${escHtml(otherUser)}')"> <span class="ch-icon">@</span><span>${escHtml(otherUser)}</span> </div>`).join('');
+  const list = document.getElementById('dm-list');
+  list.innerHTML = openDmRooms.map(({ roomId, otherUser }) => `
+    <div class="ch-item${currentDmRoom === roomId ? ' active' : ''}" onclick="openDm('${escHtml(otherUser)}')">
+      <span class="ch-icon">@</span><span>${escHtml(otherUser)}</span>
+    </div>`).join('');
 }
 
 async function openDm(username) {
-if (username === currentUser?.username) return;
-closeModal('dm-search-modal');
-const roomId = [currentUser.username, username].sort().join('__');
-currentDmRoom = roomId;
-currentChannel = null;
-if (!openDmRooms.find(r => r.roomId === roomId)) {
-openDmRooms.push({ roomId, otherUser: username });
-localStorage.setItem('nexus_dmRooms', JSON.stringify(openDmRooms));
-}
-renderDmList();
+  if (username === currentUser?.username) return;
+  closeModal('dm-search-modal');
+  const roomId = [currentUser.username, username].sort().join('__');
+  currentDmRoom = roomId;
+  currentChannel = null;
+  if (!openDmRooms.find(r => r.roomId === roomId)) {
+    openDmRooms.push({ roomId, otherUser: username });
+    localStorage.setItem('nexus_dmRooms', JSON.stringify(openDmRooms));
+  }
+  renderDmList();
 
-document.getElementById('chat-header-icon').textContent = '@';
-document.getElementById('chat-header-name').textContent = username;
-document.getElementById('chat-header-topic').textContent = 'ダイレクトメッセージ';
-document.getElementById('msg-input').placeholder = `${username} にメッセージを送信`;
-document.getElementById('input-bar').style.display = '';
-closeDrawers();
+  document.getElementById('chat-header-icon').textContent = '@';
+  document.getElementById('chat-header-name').textContent = username;
+  document.getElementById('chat-header-topic').textContent = 'ダイレクトメッセージ';
+  document.getElementById('msg-input').placeholder = `${username} にメッセージを送信`;
+  document.getElementById('input-bar').style.display = '';
+  closeDrawers();
 
-const msgEl = document.getElementById('messages');
-msgEl.innerHTML = '';
-const r = await fetch(`${API}/api/dm/${roomId}`, { headers: { Authorization: `Bearer ${token}` } });
-if (r.ok) {
-const msgs = await r.json();
-msgs.forEach(m => renderMessageToDom(m, true));
-// 未読を既読にする
-if (msgs.length) markDmRead(msgs[msgs.length - 1]);
-}
-scrollToBottom();
+  const msgEl = document.getElementById('messages');
+  msgEl.innerHTML = '';
+  const r = await fetch(`${API}/api/dm/${roomId}`, { headers: { Authorization: `Bearer ${token}` } });
+  if (r.ok) {
+    const msgs = await r.json();
+    msgs.forEach(m => renderMessageToDom(m, true));
+    // 未読を既読にする
+    if (msgs.length) markDmRead(msgs[msgs.length - 1]);
+  }
+  scrollToBottom();
 }
 
 function markDmRead(msg) {
-if (msg.author !== currentUser?.username) socket.emit('dm_read', { roomId: msg.channelId, msgId: msg.id });
+  if (msg.author !== currentUser?.username) socket.emit('dm_read', { roomId: msg.channelId, msgId: msg.id });
 }
 
 function openDmSearch() {
-document.getElementById('dm-search-input').value = '';
-renderDmSearchResults('');
-openModal('dm-search-modal');
+  document.getElementById('dm-search-input').value = '';
+  renderDmSearchResults('');
+  openModal('dm-search-modal');
 }
 
 async function renderDmSearchResults(q) {
-const container = document.getElementById('dm-search-results');
-if (!window._allMembers) {
-const r = await fetch(`${API}/api/members`, { headers: { Authorization: `Bearer ${token}` } });
-if (r.ok) window._allMembers = await r.json();
-}
-const users = (window._allMembers || []).filter(u => u.username !== currentUser?.username && (!q || u.username.toLowerCase().includes(q.toLowerCase())));
-container.innerHTML = users.map(u => ` <div class="member-item" onclick="openDm('${escHtml(u.username)}')"> <div class="member-avatar"><img src="${escHtml(u.avatar)}" /></div> <span class="member-name">${escHtml(u.username)}</span> <span class="member-badge ${u.role}">${u.role !== 'member' ? u.role : ''}</span> </div>`).join('');
+  const container = document.getElementById('dm-search-results');
+  if (!window._allMembers) {
+    const r = await fetch(`${API}/api/members`, { headers: { Authorization: `Bearer ${token}` } });
+    if (r.ok) window._allMembers = await r.json();
+  }
+  const users = (window._allMembers || []).filter(u => u.username !== currentUser?.username && (!q || u.username.toLowerCase().includes(q.toLowerCase())));
+  container.innerHTML = users.map(u => `
+    <div class="member-item" onclick="openDm('${escHtml(u.username)}')">
+      <div class="member-avatar"><img src="${escHtml(u.avatar)}" /></div>
+      <span class="member-name">${escHtml(u.username)}</span>
+      <span class="member-badge ${u.role}">${u.role !== 'member' ? u.role : ''}</span>
+    </div>`).join('');
 }
 
 // ════ MEMBERS ════
 async function renderMembers(users) {
-// フルメンバーリストを取得（オフラインも含む）
-if (!window._allMembers) {
-const r = await fetch(`${API}/api/members`, { headers: { Authorization: `Bearer ${token}` } });
-if (r.ok) window._allMembers = await r.json();
-}
-const all = window._allMembers || [];
-const onlineNames = new Set(users.map(u => u.username));
-const statusMap = {};
-users.forEach(u => statusMap[u.username] = u.status || 'online');
+  // フルメンバーリストを取得（オフラインも含む）
+  if (!window._allMembers) {
+    const r = await fetch(`${API}/api/members`, { headers: { Authorization: `Bearer ${token}` } });
+    if (r.ok) window._allMembers = await r.json();
+  }
+  const all = window._allMembers || [];
+  const onlineNames = new Set(users.map(u => u.username));
+  const statusMap = {};
+  users.forEach(u => statusMap[u.username] = u.status || 'online');
 
-const online = all.filter(u => onlineNames.has(u.username));
-const offline = all.filter(u => !onlineNames.has(u.username));
+  const online = all.filter(u => onlineNames.has(u.username));
+  const offline = all.filter(u => !onlineNames.has(u.username));
 
-const renderUser = (u) => {
-const status = statusMap[u.username] || 'offline';
-return `<div class="member-item" onclick="openDm('${escHtml(u.username)}')"> <div class="member-avatar"> <img src="${escHtml(u.avatar)}" alt="${escHtml(u.username)}" /> <div class="member-status-dot ${status}"></div> </div> <span class="member-name${u.muted ? ' muted-user' : ''}">${escHtml(u.username)}</span> ${u.role !== 'member' ? `<span class="member-badge ${u.role}">${u.role}</span>`: ''} ${u.banned ?`<span class="member-badge banned">BAN</span>` : ''} </div>`;
-};
+  const renderUser = (u) => {
+    const status = statusMap[u.username] || 'offline';
+    return `<div class="member-item" onclick="openDm('${escHtml(u.username)}')">
+      <div class="member-avatar">
+        <img src="${escHtml(u.avatar)}" alt="${escHtml(u.username)}" />
+        <div class="member-status-dot ${status}"></div>
+      </div>
+      <span class="member-name${u.muted ? ' muted-user' : ''}">${escHtml(u.username)}</span>
+      ${u.role !== 'member' ? `<span class="member-badge ${u.role}">${u.role}</span>` : ''}
+      ${u.banned ? `<span class="member-badge banned">BAN</span>` : ''}
+    </div>`;
+  };
 
-const list = document.getElementById('members-list');
-list.innerHTML =
-(online.length ? `<div style="padding:4px 16px;font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase">オンライン -- ${online.length}</div>${online.map(renderUser).join('')}` : '') +
-(offline.length ? `<div style="padding:12px 16px 4px;font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase">オフライン -- ${offline.length}</div>${offline.map(renderUser).join('')}` : '');
+  const list = document.getElementById('members-list');
+  list.innerHTML =
+    (online.length ? `<div style="padding:4px 16px;font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase">オンライン — ${online.length}</div>${online.map(renderUser).join('')}` : '') +
+    (offline.length ? `<div style="padding:12px 16px 4px;font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase">オフライン — ${offline.length}</div>${offline.map(renderUser).join('')}` : '');
 }
 
 // ════ TYPING ════
 let typingTimeout = null;
 let isTyping = false;
 function emitTyping() {
-if (!currentChannel) return;
-if (!isTyping) { isTyping = true; socket.emit('typing', { channelId: currentChannel, isTyping: true }); }
-clearTimeout(typingTimeout);
-typingTimeout = setTimeout(() => { isTyping = false; socket.emit('typing', { channelId: currentChannel, isTyping: false }); }, 2000);
+  if (!currentChannel) return;
+  if (!isTyping) { isTyping = true; socket.emit('typing', { channelId: currentChannel, isTyping: true }); }
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(() => { isTyping = false; socket.emit('typing', { channelId: currentChannel, isTyping: false }); }, 2000);
 }
 function updateTypingBar() {
-const names = Object.keys(typingTimers);
-const bar = document.getElementById('typing-bar');
-if (!names.length) { bar.innerHTML = ''; return; }
-bar.innerHTML = `<div class="typing-dots"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div> ${escHtml(names.join(', '))} が入力中...`;
+  const names = Object.keys(typingTimers);
+  const bar = document.getElementById('typing-bar');
+  if (!names.length) { bar.innerHTML = ''; return; }
+  bar.innerHTML = `<div class="typing-dots"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div> ${escHtml(names.join(', '))} が入力中...`;
 }
 
 // ════ SEARCH ════
 function toggleSearch() {
-const bar = document.getElementById('search-bar');
-bar.classList.toggle('open');
-if (bar.classList.contains('open')) document.getElementById('search-input').focus();
-else { document.getElementById('search-results').classList.remove('open'); document.getElementById('search-filters').classList.remove('open'); }
-document.getElementById('search-btn').classList.toggle('active', bar.classList.contains('open'));
+  const bar = document.getElementById('search-bar');
+  bar.classList.toggle('open');
+  if (bar.classList.contains('open')) document.getElementById('search-input').focus();
+  else { document.getElementById('search-results').classList.remove('open'); document.getElementById('search-filters').classList.remove('open'); }
+  document.getElementById('search-btn').classList.toggle('active', bar.classList.contains('open'));
 }
 function toggleSearchFilters() { document.getElementById('search-filters').classList.toggle('open'); }
 function debounceSearch(q) { clearTimeout(searchDebounce); searchDebounce = setTimeout(() => doSearch(), 400); }
 async function doSearch() {
-const q = document.getElementById('search-input').value.trim();
-if (q.length < 2) { document.getElementById('search-results').classList.remove('open'); return; }
-const scope = document.getElementById('search-scope').value;
-const author = document.getElementById('search-author')?.value.trim() || '';
-const from   = document.getElementById('search-from-date')?.value || '';
-const to     = document.getElementById('search-to-date')?.value || '';
-let url = `${API}/api/search?q=${encodeURIComponent(q)}`;
-if (scope === 'current' && currentChannel) url += `&channel=${currentChannel}`;
-if (author) url += `&author=${encodeURIComponent(author)}`;
-if (from)   url += `&from=${from}T00:00:00.000Z`;
-if (to)     url += `&to=${to}T23:59:59.999Z`;
-const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-if (!r.ok) return;
-const results = await r.json();
-const container = document.getElementById('search-results');
-container.innerHTML = results.length ? results.map(m => ` <div class="search-result-item" onclick="jumpToMsg('${m.id}','${m.channelId}')"> <div class="search-result-author">${escHtml(m.author)} <span style="color:var(--text-3);font-weight:400">in #${escHtml(m.channelId)}</span></div> <div class="search-result-content">${escHtml((m.content||'').substring(0,100))}</div> <div class="search-result-meta">${formatTime(m.timestamp)}</div> </div>`).join('') : '<div style="padding:12px;color:var(--text-3);font-size:13px">結果なし</div>';
-container.classList.add('open');
+  const q = document.getElementById('search-input').value.trim();
+  if (q.length < 2) { document.getElementById('search-results').classList.remove('open'); return; }
+  const scope = document.getElementById('search-scope').value;
+  const author = document.getElementById('search-author')?.value.trim() || '';
+  const from   = document.getElementById('search-from-date')?.value || '';
+  const to     = document.getElementById('search-to-date')?.value || '';
+  let url = `${API}/api/search?q=${encodeURIComponent(q)}`;
+  if (scope === 'current' && currentChannel) url += `&channel=${currentChannel}`;
+  if (author) url += `&author=${encodeURIComponent(author)}`;
+  if (from)   url += `&from=${from}T00:00:00.000Z`;
+  if (to)     url += `&to=${to}T23:59:59.999Z`;
+  const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (!r.ok) return;
+  const results = await r.json();
+  const container = document.getElementById('search-results');
+  container.innerHTML = results.length ? results.map(m => `
+    <div class="search-result-item" onclick="jumpToMsg('${m.id}','${m.channelId}')">
+      <div class="search-result-author">${escHtml(m.author)} <span style="color:var(--text-3);font-weight:400">in #${escHtml(m.channelId)}</span></div>
+      <div class="search-result-content">${escHtml((m.content||'').substring(0,100))}</div>
+      <div class="search-result-meta">${formatTime(m.timestamp)}</div>
+    </div>`).join('') : '<div style="padding:12px;color:var(--text-3);font-size:13px">結果なし</div>';
+  container.classList.add('open');
 }
 async function jumpToMsg(msgId, channelId) {
-if (channelId !== currentChannel) await joinChannel(channelId);
-setTimeout(() => {
-const el = document.getElementById(`msg-${msgId}`);
-if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.style.background = 'rgba(88,101,242,0.2)'; setTimeout(() => el.style.background = '', 2000); }
-}, 300);
+  if (channelId !== currentChannel) await joinChannel(channelId);
+  setTimeout(() => {
+    const el = document.getElementById(`msg-${msgId}`);
+    if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.style.background = 'rgba(88,101,242,0.2)'; setTimeout(() => el.style.background = '', 2000); }
+  }, 300);
 }
 
 // ════ PINS ════
 async function openPins() {
-if (!currentChannel) return;
-const r = await fetch(`${API}/api/channels/${currentChannel}/pins`, { headers: { Authorization: `Bearer ${token}` } });
-const pins = r.ok ? await r.json() : [];
-const list = document.getElementById('pins-list');
-if (!pins.length) { list.innerHTML = '<p style="color:var(--text-3)">ピン留めされたメッセージはありません</p>'; }
-else list.innerHTML = pins.map(p => `<div class="pin-item"> <div class="pin-item-body"> <div class="pin-item-author">${escHtml(p.author)}</div> <div class="pin-item-content">${escHtml((p.content||'').substring(0,200))}</div> <div class="pin-item-meta">${formatTime(p.timestamp)} * ピン留め by ${escHtml(p.pinnedBy||'')}</div> </div> ${['admin','moderator'].includes(currentUser?.role) ?`<button class="pin-unpin-btn" onclick="unpinMessage('${p.id}')">解除</button>` : ''} </div>`).join('');
-openModal('pins-modal');
+  if (!currentChannel) return;
+  const r = await fetch(`${API}/api/channels/${currentChannel}/pins`, { headers: { Authorization: `Bearer ${token}` } });
+  const pins = r.ok ? await r.json() : [];
+  const list = document.getElementById('pins-list');
+  if (!pins.length) { list.innerHTML = '<p style="color:var(--text-3)">ピン留めされたメッセージはありません</p>'; }
+  else list.innerHTML = pins.map(p => `
+    <div class="pin-item">
+      <div class="pin-item-body">
+        <div class="pin-item-author">${escHtml(p.author)}</div>
+        <div class="pin-item-content">${escHtml((p.content||'').substring(0,200))}</div>
+        <div class="pin-item-meta">${formatTime(p.timestamp)} • ピン留め by ${escHtml(p.pinnedBy||'')}</div>
+      </div>
+      ${['admin','moderator'].includes(currentUser?.role) ? `<button class="pin-unpin-btn" onclick="unpinMessage('${p.id}')">解除</button>` : ''}
+    </div>`).join('');
+  openModal('pins-modal');
 }
 function unpinMessage(msgId) { socket.emit('unpin_message', { msgId, channelId: currentChannel }); openPins(); }
 
 // ════ BOOKMARKS ════
 async function loadBookmarkCache() {
-const r = await fetch(`${API}/api/bookmarks`, { headers: { Authorization: `Bearer ${token}` } });
-if (r.ok) { const list = await r.json(); list.forEach(b => bookmarkCache.add(b.msgId)); }
+  const r = await fetch(`${API}/api/bookmarks`, { headers: { Authorization: `Bearer ${token}` } });
+  if (r.ok) { const list = await r.json(); list.forEach(b => bookmarkCache.add(b.msgId)); }
 }
 async function toggleBookmark(msgId, author, content, timestamp) {
-const btn = document.getElementById(`bm-btn-${msgId}`);
-if (bookmarkCache.has(msgId)) {
-await fetch(`${API}/api/bookmarks/${msgId}`, { method:'DELETE', headers: { Authorization: `Bearer ${token}` } });
-bookmarkCache.delete(msgId);
-if (btn) btn.textContent = '🏷';
-} else {
-await fetch(`${API}/api/bookmarks`, { method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body: JSON.stringify({ msgId, channelId: currentChannel, content, author, timestamp }) });
-bookmarkCache.add(msgId);
-if (btn) btn.textContent = '🔖';
-}
+  const btn = document.getElementById(`bm-btn-${msgId}`);
+  if (bookmarkCache.has(msgId)) {
+    await fetch(`${API}/api/bookmarks/${msgId}`, { method:'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    bookmarkCache.delete(msgId);
+    if (btn) btn.textContent = '🏷';
+  } else {
+    await fetch(`${API}/api/bookmarks`, { method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body: JSON.stringify({ msgId, channelId: currentChannel, content, author, timestamp }) });
+    bookmarkCache.add(msgId);
+    if (btn) btn.textContent = '🔖';
+  }
 }
 async function openBookmarks() {
-const r = await fetch(`${API}/api/bookmarks`, { headers: { Authorization: `Bearer ${token}` } });
-const list = r.ok ? await r.json() : [];
-const container = document.getElementById('bookmarks-list');
-if (!list.length) { container.innerHTML = '<p style="color:var(--text-3)">ブックマークはありません</p>'; }
-else container.innerHTML = list.map(b => ` <div class="bookmark-item" onclick="jumpToMsg('${b.msgId}','${b.channelId}');closeModal('bookmarks-modal')"> <div class="bookmark-author">${escHtml(b.author)} <span style="color:var(--text-3);font-weight:400">in #${escHtml(b.channelId||'')}</span></div> <div class="bookmark-content">${escHtml((b.content||'').substring(0,120))}</div> <div class="bookmark-meta"> <span>${formatTime(b.timestamp)}</span> <button class="bookmark-remove-btn" onclick="event.stopPropagation();removeBookmark('${b.msgId}',this.closest('.bookmark-item'))">✕</button> </div> </div>`).join('');
-openModal('bookmarks-modal');
+  const r = await fetch(`${API}/api/bookmarks`, { headers: { Authorization: `Bearer ${token}` } });
+  const list = r.ok ? await r.json() : [];
+  const container = document.getElementById('bookmarks-list');
+  if (!list.length) { container.innerHTML = '<p style="color:var(--text-3)">ブックマークはありません</p>'; }
+  else container.innerHTML = list.map(b => `
+    <div class="bookmark-item" onclick="jumpToMsg('${b.msgId}','${b.channelId}');closeModal('bookmarks-modal')">
+      <div class="bookmark-author">${escHtml(b.author)} <span style="color:var(--text-3);font-weight:400">in #${escHtml(b.channelId||'')}</span></div>
+      <div class="bookmark-content">${escHtml((b.content||'').substring(0,120))}</div>
+      <div class="bookmark-meta">
+        <span>${formatTime(b.timestamp)}</span>
+        <button class="bookmark-remove-btn" onclick="event.stopPropagation();removeBookmark('${b.msgId}',this.closest('.bookmark-item'))">✕</button>
+      </div>
+    </div>`).join('');
+  openModal('bookmarks-modal');
 }
 async function removeBookmark(msgId, el) {
-await fetch(`${API}/api/bookmarks/${msgId}`, { method:'DELETE', headers: { Authorization: `Bearer ${token}` } });
-bookmarkCache.delete(msgId);
-el?.remove();
-document.getElementById(`bm-btn-${msgId}`)?.setAttribute('textContent', '🏷');
+  await fetch(`${API}/api/bookmarks/${msgId}`, { method:'DELETE', headers: { Authorization: `Bearer ${token}` } });
+  bookmarkCache.delete(msgId);
+  el?.remove();
+  document.getElementById(`bm-btn-${msgId}`)?.setAttribute('textContent', '🏷');
 }
 
 // ════ STATUS ════
 function openStatusMenu(e) {
-e.stopPropagation();
-const menu = document.getElementById('status-menu');
-const rect = e.currentTarget.getBoundingClientRect();
-menu.style.left = rect.left + 'px';
-menu.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
-menu.style.display = 'block';
+  e.stopPropagation();
+  const menu = document.getElementById('status-menu');
+  const rect = e.currentTarget.getBoundingClientRect();
+  menu.style.left = rect.left + 'px';
+  menu.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
+  menu.style.display = 'block';
 }
 function setStatus(status) {
-socket?.emit('set_status', status);
-const dot = document.getElementById('user-status-dot');
-dot.className = `user-status-dot ${status}`;
-document.getElementById('status-menu').style.display = 'none';
+  socket?.emit('set_status', status);
+  const dot = document.getElementById('user-status-dot');
+  dot.className = `user-status-dot ${status}`;
+  document.getElementById('status-menu').style.display = 'none';
 }
 
 // ════ KEYWORDS ════
 function handleKeywordInput(e) {
-if (e.key === 'Enter' || e.key === ',') {
-e.preventDefault();
-const val = document.getElementById('keyword-input').value.trim().toLowerCase();
-if (val && !keywordTags.includes(val) && keywordTags.length < 20) {
-keywordTags.push(val);
-renderKeywordTags();
-document.getElementById('keyword-input').value = '';
-}
-}
+  if (e.key === 'Enter' || e.key === ',') {
+    e.preventDefault();
+    const val = document.getElementById('keyword-input').value.trim().toLowerCase();
+    if (val && !keywordTags.includes(val) && keywordTags.length < 20) {
+      keywordTags.push(val);
+      renderKeywordTags();
+      document.getElementById('keyword-input').value = '';
+    }
+  }
 }
 function renderKeywordTags() {
-const container = document.getElementById('keyword-tags-container');
-const input = document.getElementById('keyword-input');
-container.innerHTML = '';
-keywordTags.forEach((kw, i) => {
-const tag = document.createElement('span');
-tag.className = 'keyword-tag';
-tag.innerHTML = `${escHtml(kw)}<button onclick="removeKeyword(${i})">×</button>`;
-container.appendChild(tag);
-});
-container.appendChild(input);
+  const container = document.getElementById('keyword-tags-container');
+  const input = document.getElementById('keyword-input');
+  container.innerHTML = '';
+  keywordTags.forEach((kw, i) => {
+    const tag = document.createElement('span');
+    tag.className = 'keyword-tag';
+    tag.innerHTML = `${escHtml(kw)}<button onclick="removeKeyword(${i})">×</button>`;
+    container.appendChild(tag);
+  });
+  container.appendChild(input);
 }
 function removeKeyword(i) { keywordTags.splice(i, 1); renderKeywordTags(); }
 async function saveKeywords() {
-const r = await fetch(`${API}/api/profile/keywords`, { method:'PUT', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body: JSON.stringify({ keywords: keywordTags }) });
-if (r.ok) { const msg = document.getElementById('keyword-save-msg'); msg.style.display = ''; setTimeout(() => msg.style.display = 'none', 2000); }
+  const r = await fetch(`${API}/api/profile/keywords`, { method:'PUT', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body: JSON.stringify({ keywords: keywordTags }) });
+  if (r.ok) { const msg = document.getElementById('keyword-save-msg'); msg.style.display = ''; setTimeout(() => msg.style.display = 'none', 2000); }
 }
 function checkKeywordNotif(msg) {
-if (!keywordTags.length) return;
-const lower = (msg.content || '').toLowerCase();
-const matched = keywordTags.find(kw => lower.includes(kw));
-if (matched) showToastNotif('🔑', `キーワード「${matched}」`, msg.content, () => {});
+  if (!keywordTags.length) return;
+  const lower = (msg.content || '').toLowerCase();
+  const matched = keywordTags.find(kw => lower.includes(kw));
+  if (matched) showToastNotif('🔑', `キーワード「${matched}」`, msg.content, () => {});
 }
 
 // ════ ADMIN ════
 async function openAdminPanel() {
-openModal('admin-modal');
-switchAdminTab('users');
+  openModal('admin-modal');
+  switchAdminTab('users');
 }
 function switchAdminTab(tab) {
-document.querySelectorAll('#admin-modal .modal-tab').forEach((t,i) => t.classList.toggle('active', ['users','channels','invites','emojis'][i] === tab));
-document.querySelectorAll('#admin-modal .modal-tab-pane').forEach(p => p.classList.remove('active'));
-document.getElementById(`admin-tab-${tab}`)?.classList.add('active');
-if (tab === 'users') loadAdminUsers();
-else if (tab === 'channels') loadAdminChannels();
-else if (tab === 'invites') loadAdminInvites();
-else if (tab === 'emojis') loadAdminEmojis();
+  document.querySelectorAll('#admin-modal .modal-tab').forEach((t,i) => t.classList.toggle('active', ['users','channels','invites','emojis'][i] === tab));
+  document.querySelectorAll('#admin-modal .modal-tab-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById(`admin-tab-${tab}`)?.classList.add('active');
+  if (tab === 'users') loadAdminUsers();
+  else if (tab === 'channels') loadAdminChannels();
+  else if (tab === 'invites') loadAdminInvites();
+  else if (tab === 'emojis') loadAdminEmojis();
 }
 
 async function loadAdminUsers() {
-const r = await fetch(`${API}/api/users`, { headers: { Authorization: `Bearer ${token}` } });
-const users = r.ok ? await r.json() : [];
-window._allMembers = users;
-document.getElementById('admin-users-list').innerHTML = users.map(u => `<div class="admin-user-row"> <img class="admin-user-avatar" src="${escHtml(u.avatar)}" /> <span class="admin-user-name">${escHtml(u.username)} ${u.banned ? '🚫' : ''} ${u.muted ? '🔇' : ''}</span> <select class="role-select" onchange="changeRole('${escHtml(u.username)}',this.value)"> <option value="member"${u.role==='member'?' selected':''}>member</option> <option value="moderator"${u.role==='moderator'?' selected':''}>moderator</option> <option value="admin"${u.role==='admin'?' selected':''}>admin</option> </select> <button class="admin-action-btn mute-btn" onclick="${u.muted ?`unmuteUser('${escHtml(u.username)}')`:`muteUser('${escHtml(u.username)}')`}">${u.muted ? '🔊 ミュート解除' : '🔇 ミュート'}</button> <button class="admin-action-btn ban-btn" onclick="${u.banned ? `unbanUser('${escHtml(u.username)}')`:`banUser('${escHtml(u.username)}')`}">${u.banned ? '🔓 BAN解除' : '🚫 BAN'}</button> </div>`).join('');
+  const r = await fetch(`${API}/api/users`, { headers: { Authorization: `Bearer ${token}` } });
+  const users = r.ok ? await r.json() : [];
+  window._allMembers = users;
+  document.getElementById('admin-users-list').innerHTML = users.map(u => `
+    <div class="admin-user-row">
+      <img class="admin-user-avatar" src="${escHtml(u.avatar)}" />
+      <span class="admin-user-name">${escHtml(u.username)} ${u.banned ? '🚫' : ''} ${u.muted ? '🔇' : ''}</span>
+      <select class="role-select" onchange="changeRole('${escHtml(u.username)}',this.value)">
+        <option value="member"${u.role==='member'?' selected':''}>member</option>
+        <option value="moderator"${u.role==='moderator'?' selected':''}>moderator</option>
+        <option value="admin"${u.role==='admin'?' selected':''}>admin</option>
+      </select>
+      <button class="admin-action-btn mute-btn" onclick="${u.muted ? `unmuteUser('${escHtml(u.username)}')` : `muteUser('${escHtml(u.username)}')`}">${u.muted ? '🔊 ミュート解除' : '🔇 ミュート'}</button>
+      <button class="admin-action-btn ban-btn" onclick="${u.banned ? `unbanUser('${escHtml(u.username)}')` : `banUser('${escHtml(u.username)}')`}">${u.banned ? '🔓 BAN解除' : '🚫 BAN'}</button>
+    </div>`).join('');
 }
 
 async function changeRole(username, role) {
-await fetch(`${API}/api/users/${username}/role`, { method:'PUT', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body: JSON.stringify({ role }) });
+  await fetch(`${API}/api/users/${username}/role`, { method:'PUT', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body: JSON.stringify({ role }) });
 }
 async function muteUser(username) { await fetch(`${API}/api/users/${username}/mute`, { method:'POST', headers:{ Authorization:`Bearer ${token}` } }); loadAdminUsers(); }
 async function unmuteUser(username) { await fetch(`${API}/api/users/${username}/unmute`, { method:'POST', headers:{ Authorization:`Bearer ${token}` } }); loadAdminUsers(); }
@@ -1501,159 +1499,179 @@ async function banUser(username) { if (!confirm(`${username} をBANしますか�
 async function unbanUser(username) { await fetch(`${API}/api/users/${username}/unban`, { method:'POST', headers:{ Authorization:`Bearer ${token}` } }); loadAdminUsers(); }
 
 async function loadAdminChannels() {
-const chs = Object.values(channels_state);
-document.getElementById('admin-channels-list').innerHTML = chs.map(ch => `<div class="ch-manage-row"> <span class="ch-manage-name">${ch.readonly ? '📢' : '#'}${escHtml(ch.name)} <span style="color:var(--text-3);font-size:12px">${escHtml(ch.topic||'')}</span></span> <button class="ch-edit-btn" onclick="openChannelEdit('${ch.id}')">編集</button> ${!['general','random','media','dev'].includes(ch.id) ?`<button class="ch-del-btn" onclick="deleteChannel('${ch.id}')">削除</button>` : ''} </div>`).join('');
+  const chs = Object.values(channels_state);
+  document.getElementById('admin-channels-list').innerHTML = chs.map(ch => `
+    <div class="ch-manage-row">
+      <span class="ch-manage-name">${ch.readonly ? '📢' : '#'}${escHtml(ch.name)} <span style="color:var(--text-3);font-size:12px">${escHtml(ch.topic||'')}</span></span>
+      <button class="ch-edit-btn" onclick="openChannelEdit('${ch.id}')">編集</button>
+      ${!['general','random','media','dev'].includes(ch.id) ? `<button class="ch-del-btn" onclick="deleteChannel('${ch.id}')">削除</button>` : ''}
+    </div>`).join('');
 }
 
 async function createChannel() {
-const name = document.getElementById('new-channel-name').value.trim();
-const topic = document.getElementById('new-channel-topic').value.trim();
-if (!name) return;
-const r = await fetch(`${API}/api/channels`, { method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body: JSON.stringify({ name, topic }) });
-const d = await r.json();
-if (!r.ok) { alert(d.error); return; }
-document.getElementById('new-channel-name').value = '';
-document.getElementById('new-channel-topic').value = '';
-loadAdminChannels();
+  const name = document.getElementById('new-channel-name').value.trim();
+  const topic = document.getElementById('new-channel-topic').value.trim();
+  if (!name) return;
+  const r = await fetch(`${API}/api/channels`, { method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body: JSON.stringify({ name, topic }) });
+  const d = await r.json();
+  if (!r.ok) { alert(d.error); return; }
+  document.getElementById('new-channel-name').value = '';
+  document.getElementById('new-channel-topic').value = '';
+  loadAdminChannels();
 }
 
 function openChannelEdit(channelId) {
-editingChannelId = channelId;
-const ch = channels_state[channelId];
-document.getElementById('edit-channel-topic').value = ch?.topic || '';
-const readonlyToggle = document.getElementById('edit-channel-readonly');
-readonlyToggle.classList.toggle('on', ch?.readonly || false);
-document.getElementById('channel-edit-title').textContent = `#${ch?.name} を編集`;
-closeModal('admin-modal');
-openModal('channel-edit-modal');
+  editingChannelId = channelId;
+  const ch = channels_state[channelId];
+  document.getElementById('edit-channel-topic').value = ch?.topic || '';
+  const readonlyToggle = document.getElementById('edit-channel-readonly');
+  readonlyToggle.classList.toggle('on', ch?.readonly || false);
+  document.getElementById('channel-edit-title').textContent = `#${ch?.name} を編集`;
+  closeModal('admin-modal');
+  openModal('channel-edit-modal');
 }
 async function saveChannelEdit() {
-if (!editingChannelId) return;
-const topic = document.getElementById('edit-channel-topic').value.trim();
-const readonly = document.getElementById('edit-channel-readonly').classList.contains('on');
-await fetch(`${API}/api/channels/${editingChannelId}`, { method:'PUT', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body: JSON.stringify({ topic, readonly }) });
-closeModal('channel-edit-modal');
+  if (!editingChannelId) return;
+  const topic = document.getElementById('edit-channel-topic').value.trim();
+  const readonly = document.getElementById('edit-channel-readonly').classList.contains('on');
+  await fetch(`${API}/api/channels/${editingChannelId}`, { method:'PUT', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body: JSON.stringify({ topic, readonly }) });
+  closeModal('channel-edit-modal');
 }
 
 async function deleteChannel(channelId) {
-if (!confirm(`#${channelId} を削除しますか？この操作は取り消せません。`)) return;
-await fetch(`${API}/api/channels/${channelId}`, { method:'DELETE', headers:{ Authorization:`Bearer ${token}` } });
-loadAdminChannels();
+  if (!confirm(`#${channelId} を削除しますか？この操作は取り消せません。`)) return;
+  await fetch(`${API}/api/channels/${channelId}`, { method:'DELETE', headers:{ Authorization:`Bearer ${token}` } });
+  loadAdminChannels();
 }
 
 function openChannelCreate() {
-openAdminPanel();
-setTimeout(() => switchAdminTab('channels'), 100);
+  openAdminPanel();
+  setTimeout(() => switchAdminTab('channels'), 100);
 }
 
 async function openTopicEdit() {
-if (!['admin','moderator'].includes(currentUser?.role)) return;
-openChannelEdit(currentChannel);
+  if (!['admin','moderator'].includes(currentUser?.role)) return;
+  openChannelEdit(currentChannel);
 }
 
 async function loadAdminInvites() {
-const r = await fetch(`${API}/api/invites`, { headers: { Authorization: `Bearer ${token}` } });
-const list = r.ok ? await r.json() : [];
-document.getElementById('admin-invites-list').innerHTML = list.length ? list.map(inv => `<div class="invite-row"> <span class="invite-code">${escHtml(inv.code)}</span> <span class="invite-meta">${inv.used ? '使用済' : inv.expiresAt ?`期限: ${new Date(inv.expiresAt).toLocaleDateString()}` : '期限なし'}</span> <button class="invite-copy-btn" onclick="navigator.clipboard.writeText('${escHtml(inv.code)}');this.textContent='✓ コピー'">コピー</button> <button class="secondary-btn" onclick="deleteInvite('${escHtml(inv.code)}')">削除</button> </div>`).join('') : '<p style="color:var(--text-3)">招待コードはありません</p>';
+  const r = await fetch(`${API}/api/invites`, { headers: { Authorization: `Bearer ${token}` } });
+  const list = r.ok ? await r.json() : [];
+  document.getElementById('admin-invites-list').innerHTML = list.length ? list.map(inv => `
+    <div class="invite-row">
+      <span class="invite-code">${escHtml(inv.code)}</span>
+      <span class="invite-meta">${inv.used ? '使用済' : inv.expiresAt ? `期限: ${new Date(inv.expiresAt).toLocaleDateString()}` : '期限なし'}</span>
+      <button class="invite-copy-btn" onclick="navigator.clipboard.writeText('${escHtml(inv.code)}');this.textContent='✓ コピー'">コピー</button>
+      <button class="secondary-btn" onclick="deleteInvite('${escHtml(inv.code)}')">削除</button>
+    </div>`).join('') : '<p style="color:var(--text-3)">招待コードはありません</p>';
 }
 async function createInvite() {
-const expiresIn = document.getElementById('invite-expires').value || null;
-const r = await fetch(`${API}/api/invites`, { method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body: JSON.stringify({ expiresIn: expiresIn ? parseInt(expiresIn) : null }) });
-if (r.ok) loadAdminInvites();
+  const expiresIn = document.getElementById('invite-expires').value || null;
+  const r = await fetch(`${API}/api/invites`, { method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body: JSON.stringify({ expiresIn: expiresIn ? parseInt(expiresIn) : null }) });
+  if (r.ok) loadAdminInvites();
 }
 async function deleteInvite(code) { await fetch(`${API}/api/invites/${code}`, { method:'DELETE', headers:{ Authorization:`Bearer ${token}` } }); loadAdminInvites(); }
 
 async function loadAdminEmojis() {
-const r = await fetch(`${API}/api/emojis`, { headers: { Authorization: `Bearer ${token}` } });
-const list = r.ok ? await r.json() : [];
-document.getElementById('admin-emojis-list').innerHTML = list.length ? list.map(e => ` <div class="emoji-manage-row"> <img class="emoji-manage-preview" src="${escHtml(e.url)}" /> <span class="emoji-manage-name">:${escHtml(e.name)}:</span> <button class="secondary-btn" onclick="deleteEmoji('${escHtml(e.name)}')">削除</button> </div>`).join('') : '<p style="color:var(--text-3)">カスタム絵文字はありません</p>';
+  const r = await fetch(`${API}/api/emojis`, { headers: { Authorization: `Bearer ${token}` } });
+  const list = r.ok ? await r.json() : [];
+  document.getElementById('admin-emojis-list').innerHTML = list.length ? list.map(e => `
+    <div class="emoji-manage-row">
+      <img class="emoji-manage-preview" src="${escHtml(e.url)}" />
+      <span class="emoji-manage-name">:${escHtml(e.name)}:</span>
+      <button class="secondary-btn" onclick="deleteEmoji('${escHtml(e.name)}')">削除</button>
+    </div>`).join('') : '<p style="color:var(--text-3)">カスタム絵文字はありません</p>';
 }
 async function uploadEmoji() {
-const name = document.getElementById('new-emoji-name').value.trim();
-const file = document.getElementById('new-emoji-file').files[0];
-if (!name || !file) { alert('名前と画像を入力してください'); return; }
-const form = new FormData();
-form.append('name', name);
-form.append('image', file);
-const r = await fetch(`${API}/api/emojis`, { method:'POST', headers:{ Authorization:`Bearer ${token}` }, body: form });
-if (!r.ok) { const d = await r.json(); alert(d.error); return; }
-loadAdminEmojis();
+  const name = document.getElementById('new-emoji-name').value.trim();
+  const file = document.getElementById('new-emoji-file').files[0];
+  if (!name || !file) { alert('名前と画像を入力してください'); return; }
+  const form = new FormData();
+  form.append('name', name);
+  form.append('image', file);
+  const r = await fetch(`${API}/api/emojis`, { method:'POST', headers:{ Authorization:`Bearer ${token}` }, body: form });
+  if (!r.ok) { const d = await r.json(); alert(d.error); return; }
+  loadAdminEmojis();
 }
 async function deleteEmoji(name) { await fetch(`${API}/api/emojis/${name}`, { method:'DELETE', headers:{ Authorization:`Bearer ${token}` } }); loadAdminEmojis(); }
 
 // ════ SETTINGS ════
 const AVATAR_STYLES = [
-{ key:'bottts', label:'🤖 ボット' }, { key:'avataaars', label:'👤 人物' },
-{ key:'pixel-art', label:'🎮 ピクセル' }, { key:'fun-emoji', label:'😀 絵文字' },
-{ key:'thumbs', label:'👍 サムズ' }, { key:'shapes', label:'🔷 シェイプ' },
+  { key:'bottts', label:'🤖 ボット' }, { key:'avataaars', label:'👤 人物' },
+  { key:'pixel-art', label:'🎮 ピクセル' }, { key:'fun-emoji', label:'😀 絵文字' },
+  { key:'thumbs', label:'👍 サムズ' }, { key:'shapes', label:'🔷 シェイプ' },
 ];
 
 function openSettings() {
-document.getElementById('settings-username').textContent = currentUser?.username || '--';
-document.getElementById('settings-role').textContent = currentUser?.role || 'member';
-document.getElementById('settings-username-display').textContent = currentUser?.username || '--';
-document.getElementById('settings-role-display').textContent = currentUser?.role || 'member';
-pendingAvatar = currentUser?.avatar;
-document.getElementById('settings-avatar-preview').src = pendingAvatar || '';
-const container = document.getElementById('avatar-style-btns');
-container.innerHTML = AVATAR_STYLES.map(s =>
-`<button onclick="previewAvatarStyle('${s.key}')" class="secondary-btn" style="font-size:12px;padding:4px 10px">${s.label}</button>`).join('');
-renderKeywordTags();
-applySettings();
-switchSettingsTab('appearance');
-openModal('settings-modal');
+  document.getElementById('settings-username').textContent = currentUser?.username || '—';
+  document.getElementById('settings-role').textContent = currentUser?.role || 'member';
+  document.getElementById('settings-username-display').textContent = currentUser?.username || '—';
+  document.getElementById('settings-role-display').textContent = currentUser?.role || 'member';
+  pendingAvatar = currentUser?.avatar;
+  document.getElementById('settings-avatar-preview').src = pendingAvatar || '';
+  const container = document.getElementById('avatar-style-btns');
+  container.innerHTML = AVATAR_STYLES.map(s =>
+    `<button onclick="previewAvatarStyle('${s.key}')" class="secondary-btn" style="font-size:12px;padding:4px 10px">${s.label}</button>`).join('');
+  renderKeywordTags();
+  applySettings();
+  switchSettingsTab('appearance');
+  openModal('settings-modal');
 }
 function switchSettingsTab(tab) {
-document.querySelectorAll('#settings-modal .modal-tab').forEach((t,i) => t.classList.toggle('active', ['appearance','avatar','notifications','account'][i] === tab));
-document.querySelectorAll('#settings-modal .modal-tab-pane').forEach(p => p.classList.remove('active'));
-document.getElementById(`settings-tab-${tab}`)?.classList.add('active');
+  document.querySelectorAll('#settings-modal .modal-tab').forEach((t,i) => t.classList.toggle('active', ['appearance','avatar','notifications','account'][i] === tab));
+  document.querySelectorAll('#settings-modal .modal-tab-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById(`settings-tab-${tab}`)?.classList.add('active');
 }
 
 function previewAvatarStyle(style) {
-const url = `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(currentUser?.username||'user')}`;
-pendingAvatar = url;
-document.getElementById('settings-avatar-preview').src = url;
+  const url = `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(currentUser?.username||'user')}`;
+  pendingAvatar = url;
+  document.getElementById('settings-avatar-preview').src = url;
 }
 async function handleAvatarFileSelect(files) {
-if (!files?.length) return;
-const form = new FormData(); form.append('file', files[0]);
-const r = await fetch(`${API}/api/upload`, { method:'POST', headers:{ Authorization:`Bearer ${token}` }, body: form });
-if (!r.ok) { alert('アップロードに失敗しました'); return; }
-const d = await r.json();
-pendingAvatar = d.url.startsWith('http') ? d.url : `${API}${d.url}`;
-document.getElementById('settings-avatar-preview').src = pendingAvatar;
+  if (!files?.length) return;
+  const form = new FormData(); form.append('file', files[0]);
+  const r = await fetch(`${API}/api/upload`, { method:'POST', headers:{ Authorization:`Bearer ${token}` }, body: form });
+  if (!r.ok) { alert('アップロードに失敗しました'); return; }
+  const d = await r.json();
+  pendingAvatar = d.url.startsWith('http') ? d.url : `${API}${d.url}`;
+  document.getElementById('settings-avatar-preview').src = pendingAvatar;
 }
 async function saveAvatar() {
-if (!pendingAvatar || pendingAvatar === currentUser?.avatar) return;
-const r = await fetch(`${API}/api/profile/avatar`, { method:'PUT', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body: JSON.stringify({ avatar: pendingAvatar }) });
-if (!r.ok) { alert('保存に失敗しました'); return; }
-currentUser.avatar = pendingAvatar;
-document.getElementById('user-avatar-img').src = pendingAvatar;
-const msg = document.getElementById('avatar-save-msg'); msg.style.display = ''; setTimeout(() => msg.style.display = 'none', 2000);
+  if (!pendingAvatar || pendingAvatar === currentUser?.avatar) return;
+  const r = await fetch(`${API}/api/profile/avatar`, { method:'PUT', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body: JSON.stringify({ avatar: pendingAvatar }) });
+  if (!r.ok) { alert('保存に失敗しました'); return; }
+  currentUser.avatar = pendingAvatar;
+  document.getElementById('user-avatar-img').src = pendingAvatar;
+  const msg = document.getElementById('avatar-save-msg'); msg.style.display = ''; setTimeout(() => msg.style.display = 'none', 2000);
 }
 
 async function changePassword() {
-const cur = document.getElementById('pw-current').value;
-const nw  = document.getElementById('pw-new').value;
-const msgEl = document.getElementById('pw-msg');
-if (!cur || !nw) { showPwMsg('現在と新しいパスワードを入力してください', 'red'); return; }
-const r = await fetch(`${API}/api/profile/password`, { method:'PUT', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body: JSON.stringify({ currentPassword: cur, newPassword: nw }) });
-const d = await r.json();
-if (!r.ok) { showPwMsg(d.error || '変更に失敗しました', 'red'); return; }
-showPwMsg('✓ パスワードを変更しました', 'var(--green)');
-document.getElementById('pw-current').value = '';
-document.getElementById('pw-new').value = '';
+  const cur = document.getElementById('pw-current').value;
+  const nw  = document.getElementById('pw-new').value;
+  const msgEl = document.getElementById('pw-msg');
+  if (!cur || !nw) { showPwMsg('現在と新しいパスワードを入力してください', 'red'); return; }
+  const r = await fetch(`${API}/api/profile/password`, { method:'PUT', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body: JSON.stringify({ currentPassword: cur, newPassword: nw }) });
+  const d = await r.json();
+  if (!r.ok) { showPwMsg(d.error || '変更に失敗しました', 'red'); return; }
+  showPwMsg('✓ パスワードを変更しました', 'var(--green)');
+  document.getElementById('pw-current').value = '';
+  document.getElementById('pw-new').value = '';
 }
 function showPwMsg(msg, color) {
-const el = document.getElementById('pw-msg');
-el.textContent = msg; el.style.color = color; el.style.display = '';
-setTimeout(() => el.style.display = 'none', 3000);
+  const el = document.getElementById('pw-msg');
+  el.textContent = msg; el.style.color = color; el.style.display = '';
+  setTimeout(() => el.style.display = 'none', 3000);
 }
 
 async function loadSessions() {
-const r = await fetch(`${API}/api/profile/sessions`, { headers: { Authorization: `Bearer ${token}` } });
-const list = r.ok ? await r.json() : [];
-document.getElementById('sessions-list').innerHTML = list.length ? list.map(s => ` <div class="session-row"> <div class="session-ip">📍 ${escHtml(s.ip || '不明')}</div> <div class="session-meta">${escHtml((s.ua||'').substring(0,80))} * ${new Date(s.loginAt).toLocaleString()}</div> </div>`).join('') : '<p style="color:var(--text-3);font-size:13px">履歴はありません</p>';
+  const r = await fetch(`${API}/api/profile/sessions`, { headers: { Authorization: `Bearer ${token}` } });
+  const list = r.ok ? await r.json() : [];
+  document.getElementById('sessions-list').innerHTML = list.length ? list.map(s => `
+    <div class="session-row">
+      <div class="session-ip">📍 ${escHtml(s.ip || '不明')}</div>
+      <div class="session-meta">${escHtml((s.ua||'').substring(0,80))} • ${new Date(s.loginAt).toLocaleString()}</div>
+    </div>`).join('') : '<p style="color:var(--text-3);font-size:13px">履歴はありません</p>';
 }
 
 function setTheme(t) { settings.theme = t; applySettings(); saveSettings(); }
@@ -1662,16 +1680,16 @@ function setSendKey(v) { settings.sendKey = v; saveSettings(); }
 function toggleSetting(k) { settings[k] = !settings[k]; document.getElementById('toggle-' + (k === 'mentionOnly' ? 'mention-only' : k)).classList.toggle('on', settings[k]); saveSettings(); }
 async function requestNotifPermission() { const p = await Notification.requestPermission(); settings.notif = p === 'granted'; document.getElementById('toggle-notif').classList.toggle('on', settings.notif); saveSettings(); }
 function applySettings() {
-document.body.classList.toggle('theme-light', settings.theme === 'light');
-document.getElementById('theme-dark')?.classList.toggle('active', settings.theme === 'dark');
-document.getElementById('theme-light')?.classList.toggle('active', settings.theme === 'light');
-document.documentElement.style.setProperty('--font-size', settings.fontSize + 'px');
-const sl = document.getElementById('font-slider'); if (sl) sl.value = settings.fontSize;
-const fl = document.getElementById('font-size-label'); if (fl) fl.textContent = settings.fontSize + 'px';
-document.getElementById('toggle-sound')?.classList.toggle('on', settings.sound);
-document.getElementById('toggle-notif')?.classList.toggle('on', settings.notif);
-document.getElementById('toggle-mention-only')?.classList.toggle('on', settings.mentionOnly);
-const sk = document.getElementById('send-key-select'); if (sk) sk.value = settings.sendKey;
+  document.body.classList.toggle('theme-light', settings.theme === 'light');
+  document.getElementById('theme-dark')?.classList.toggle('active', settings.theme === 'dark');
+  document.getElementById('theme-light')?.classList.toggle('active', settings.theme === 'light');
+  document.documentElement.style.setProperty('--font-size', settings.fontSize + 'px');
+  const sl = document.getElementById('font-slider'); if (sl) sl.value = settings.fontSize;
+  const fl = document.getElementById('font-size-label'); if (fl) fl.textContent = settings.fontSize + 'px';
+  document.getElementById('toggle-sound')?.classList.toggle('on', settings.sound);
+  document.getElementById('toggle-notif')?.classList.toggle('on', settings.notif);
+  document.getElementById('toggle-mention-only')?.classList.toggle('on', settings.mentionOnly);
+  const sk = document.getElementById('send-key-select'); if (sk) sk.value = settings.sendKey;
 }
 function saveSettings() { localStorage.setItem('nexus_settings', JSON.stringify(settings)); }
 
@@ -1679,107 +1697,102 @@ function openLogoutConfirm() { closeModal('settings-modal'); openModal('logout-c
 function logout() { localStorage.removeItem('token'); localStorage.removeItem('nexus_dmRooms'); socket?.disconnect(); location.reload(); }
 function openDeleteAccount() { document.getElementById('delete-account-pw').value = ''; document.getElementById('delete-account-err').style.display = 'none'; openModal('delete-account-modal'); }
 async function confirmDeleteAccount() {
-const pw = document.getElementById('delete-account-pw').value;
-if (!pw) { showDeleteErr('パスワードを入力してください'); return; }
-const r = await fetch(`${API}/api/account`, { method:'DELETE', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body: JSON.stringify({ password: pw }) });
-const d = await r.json();
-if (!r.ok) { showDeleteErr(d.error || '削除に失敗しました'); return; }
-alert('アカウントを削除しました');
-logout();
+  const pw = document.getElementById('delete-account-pw').value;
+  if (!pw) { showDeleteErr('パスワードを入力してください'); return; }
+  const r = await fetch(`${API}/api/account`, { method:'DELETE', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body: JSON.stringify({ password: pw }) });
+  const d = await r.json();
+  if (!r.ok) { showDeleteErr(d.error || '削除に失敗しました'); return; }
+  alert('アカウントを削除しました');
+  logout();
 }
 function showDeleteErr(msg) { const el = document.getElementById('delete-account-err'); el.textContent = msg; el.style.display = ''; }
 
 // ════ FILE UPLOAD ════
 let fileInputEl;
 function openFilePicker() {
-if (!fileInputEl) { fileInputEl = document.createElement('input'); fileInputEl.type = 'file'; fileInputEl.style.display = 'none'; fileInputEl.onchange = e => handleFileSelect(e.target.files); document.body.appendChild(fileInputEl); }
-fileInputEl.click();
+  if (!fileInputEl) { fileInputEl = document.createElement('input'); fileInputEl.type = 'file'; fileInputEl.style.display = 'none'; fileInputEl.onchange = e => handleFileSelect(e.target.files); document.body.appendChild(fileInputEl); }
+  fileInputEl.click();
 }
 async function handleFileSelect(files) {
-if (!files?.length) return;
-showUploadToast('アップロード中...');
-const form = new FormData(); form.append('file', files[0]);
-const r = await fetch(`${API}/api/upload`, { method:'POST', headers:{ Authorization:`Bearer ${token}` }, body: form });
-hideUploadToast();
-if (!r.ok) { alert('アップロードに失敗しました'); return; }
-const fi = await r.json();
-if (currentDmRoom) {
-const other = currentDmRoom.split('__').find(u => u !== currentUser?.username);
-socket.emit('send_dm', { toUsername: other, content: `📎 ${fi.filename}`, fileInfo: fi });
-} else {
-socket.emit('send_file', { channelId: currentChannel, fileInfo: fi });
-}
+  if (!files?.length) return;
+  showUploadToast('アップロード中...');
+  const form = new FormData(); form.append('file', files[0]);
+  const r = await fetch(`${API}/api/upload`, { method:'POST', headers:{ Authorization:`Bearer ${token}` }, body: form });
+  hideUploadToast();
+  if (!r.ok) { alert('アップロードに失敗しました'); return; }
+  const fi = await r.json();
+  if (currentDmRoom) {
+    const other = currentDmRoom.split('__').find(u => u !== currentUser?.username);
+    socket.emit('send_dm', { toUsername: other, content: `📎 ${fi.filename}`, fileInfo: fi });
+  } else {
+    socket.emit('send_file', { channelId: currentChannel, fileInfo: fi });
+  }
 }
 function showUploadToast(msg) { const t = document.getElementById('upload-toast'); t.querySelector('#upload-toast-text').textContent = msg; t.classList.add('show'); }
 function hideUploadToast() { document.getElementById('upload-toast').classList.remove('show'); }
 function initDragDrop() {
-document.addEventListener('dragover', e => { e.preventDefault(); document.getElementById('drop-overlay').classList.add('active'); });
-document.addEventListener('dragleave', e => { if (!e.relatedTarget) document.getElementById('drop-overlay').classList.remove('active'); });
-document.addEventListener('drop', e => { e.preventDefault(); document.getElementById('drop-overlay').classList.remove('active'); handleFileSelect(e.dataTransfer.files); });
+  document.addEventListener('dragover', e => { e.preventDefault(); document.getElementById('drop-overlay').classList.add('active'); });
+  document.addEventListener('dragleave', e => { if (!e.relatedTarget) document.getElementById('drop-overlay').classList.remove('active'); });
+  document.addEventListener('drop', e => { e.preventDefault(); document.getElementById('drop-overlay').classList.remove('active'); handleFileSelect(e.dataTransfer.files); });
 }
 
 // ════ EMOJI PICKER ════
 const EMOJI_DATA = { '😀 顔': ['😀','😂','😅','🤣','😊','😇','🙂','😍','🥰','😘','😋','😎','🥳','🤩','😏','😒','😞','😔','😟','😕','🙁','☹️','😣','😖','😫','😩','🥺','😢','😭','😤','😠','😡','🤬','😈','💀'], '❤️ ハート': ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','💕','💞','💓','💗','💖','💘','💝','💟','❣️'], '👍 ジェスチャー': ['👍','👎','👌','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','👇','☝️','✋','🤚','🖐️','🖖','👋','🤜','🤛','👊','✊','🙌','👐','🤲','🙏'], '🎉 お祝い': ['🎉','🎊','🎈','🎁','🎀','🎆','🎇','✨','🌟','⭐','🏆','🥇','🎖️'], '🔥 シンボル': ['🔥','💯','✅','❌','⭕','❓','❗','💤','🆒','🆓','🆕','🆙','🆗'] };
 
 function toggleEmojiPicker() {
-const picker = document.getElementById('emoji-picker');
-if (picker.classList.toggle('open')) {
-const cats = document.getElementById('emoji-cats');
-cats.innerHTML = Object.keys(EMOJI_DATA).concat(customEmojiList.length ? ['🎨 カスタム'] : []).map((c,i) => `<button class="emoji-cat-btn${i===0?' active':''}" onclick="showEmojiCat(${i},'${escHtml(c)}')">${c.split(' ')[0]}</button>`).join('');
-showEmojiCat(0, Object.keys(EMOJI_DATA)[0]);
-}
+  const picker = document.getElementById('emoji-picker');
+  if (picker.classList.toggle('open')) {
+    const cats = document.getElementById('emoji-cats');
+    cats.innerHTML = Object.keys(EMOJI_DATA).concat(customEmojiList.length ? ['🎨 カスタム'] : []).map((c,i) => `<button class="emoji-cat-btn${i===0?' active':''}" onclick="showEmojiCat(${i},'${escHtml(c)}')">${c.split(' ')[0]}</button>`).join('');
+    showEmojiCat(0, Object.keys(EMOJI_DATA)[0]);
+  }
 }
 function showEmojiCat(idx, cat) {
-document.querySelectorAll('.emoji-cat-btn').forEach((b,i) => b.classList.toggle('active', i === idx));
-const grid = document.getElementById('emoji-grid');
-if (cat === '🎨 カスタム') {
-grid.innerHTML = customEmojiList.map(e => `<button class="emoji-btn-item" onclick="insertEmoji(':${e.name}:')" title=":${escHtml(e.name)}:"><img class="custom-emoji-img" src="${escHtml(e.url)}" /></button>`).join('');
-} else {
-grid.innerHTML = (EMOJI_DATA[cat] || []).map(e => `<button class="emoji-btn-item" onclick="insertEmoji('${e}')">${e}</button>`).join('');
-}
+  document.querySelectorAll('.emoji-cat-btn').forEach((b,i) => b.classList.toggle('active', i === idx));
+  const grid = document.getElementById('emoji-grid');
+  if (cat === '🎨 カスタム') {
+    grid.innerHTML = customEmojiList.map(e => `<button class="emoji-btn-item" onclick="insertEmoji(':${e.name}:')" title=":${escHtml(e.name)}:"><img class="custom-emoji-img" src="${escHtml(e.url)}" /></button>`).join('');
+  } else {
+    grid.innerHTML = (EMOJI_DATA[cat] || []).map(e => `<button class="emoji-btn-item" onclick="insertEmoji('${e}')">${e}</button>`).join('');
+  }
 }
 function insertEmoji(e) { const inp = document.getElementById('msg-input'); inp.value += e; inp.focus(); document.getElementById('emoji-picker').classList.remove('open'); }
 
 // ════ NOTIFICATION ════
 function showToastNotif(icon, title, text, onClick) {
-document.querySelectorAll('.toast-notif').forEach(el => el.remove());
-const el = document.createElement('div'); el.className = 'toast-notif';
-el.innerHTML = `<div class="toast-notif-icon">${icon}</div><div class="toast-notif-body"><div class="toast-notif-title">${escHtml(title)}</div>${text ? `<div class="toast-notif-text">${escHtml(text.substring(0,80))}</div>` : ''}</div>`;
-if (onClick) el.onclick = () => { onClick(); el.remove(); };
-document.body.appendChild(el);
-setTimeout(() => el.remove(), 4000);
-if (settings.sound) { try { const ctx = new AudioContext(); const g = ctx.createGain(); g.gain.value = 0.15; const o = ctx.createOscillator(); o.frequency.value = 880; o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 0.1); } catch(e) {} }
-if (settings.notif && document.hidden) { try { new Notification(String(title), { body: String(text || ''), icon: '/favicon.ico' }); } catch(e) {} }
+  document.querySelectorAll('.toast-notif').forEach(el => el.remove());
+  const el = document.createElement('div'); el.className = 'toast-notif';
+  el.innerHTML = `<div class="toast-notif-icon">${icon}</div><div class="toast-notif-body"><div class="toast-notif-title">${escHtml(title)}</div>${text ? `<div class="toast-notif-text">${escHtml(text.substring(0,80))}</div>` : ''}</div>`;
+  if (onClick) el.onclick = () => { onClick(); el.remove(); };
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+  if (settings.sound) { try { const ctx = new AudioContext(); const g = ctx.createGain(); g.gain.value = 0.15; const o = ctx.createOscillator(); o.frequency.value = 880; o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 0.1); } catch(e) {} }
+  if (settings.notif && document.hidden) { try { new Notification(String(title), { body: String(text || ''), icon: '/favicon.ico' }); } catch(e) {} }
 }
 
 // ════ HELPERS ════
 function renderContent(text) {
-if (!text) return { html: '', urls: [] };
-const urlRx = /https?:\/\/[^\s<>"')\]]+/g;
-const urls = (text.match(urlRx) || []).slice(0, 2);
-let t = escHtml(text);
-t = t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-t = t.replace(/\*(.+?)\*/g, '<em>$1</em>');
-t = t.replace(/`(.+?)`/g, '<code style="background:var(--bg-panel);padding:1px 5px;border-radius:4px;font-family:var(--font-mono);font-size:13px">$1</code>');
-t = t.replace(/@(\w+)/g, '<span class="mention">@$1</span>');
-t = t.replace(/https?:\/\/[^\s<>"'&)\]]+/g, function(url) {
-  const clean = url.replace(/&amp;/g, '&');
-  return '<a href="' + clean + '" target="_blank" rel="noopener noreferrer" style="color:var(--accent);text-decoration:none;" onmouseover="this.style.textDecoration=\'underline\'" onmouseout="this.style.textDecoration=\'none\'">' + url + '</a>';
-});
-t = t.replace(/\n/g, '<br>');
-t = t.replace(/:([a-z0-9_]+):/g, function(m, name) {
-  const ce = customEmojiList.find(function(e) { return e.name === name; });
-  return ce ? '<img src="' + escHtml(ce.url) + '" class="custom-emoji-img" title=":' + escHtml(name) + ':" />' : m;
-});
-return { html: t, urls: urls };
+  if (!text) return '';
+  let t = escHtml(text);
+  t = t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  t = t.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  t = t.replace(/`(.+?)`/g, '<code style="background:var(--bg-panel);padding:1px 5px;border-radius:4px;font-family:var(--font-mono);font-size:13px">$1</code>');
+  t = t.replace(/@(\w+)/g, '<span class="mention">@$1</span>');
+  t = t.replace(/\n/g, '<br>');
+  // カスタム絵文字
+  t = t.replace(/:([a-z0-9_]+):/g, (m, name) => {
+    const ce = customEmojiList.find(e => e.name === name);
+    return ce ? `<img src="${escHtml(ce.url)}" class="custom-emoji-img" title=":${escHtml(name)}:" />` : m;
+  });
+  return t;
 }
-function escHtml(s) { return String(s || '').replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"').replace(/'/g,'''); }
+function escHtml(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function formatTime(ts) { const d = new Date(ts); return d.toLocaleString('ja-JP', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }); }
 function formatBytes(b) { if (!b) return ''; if (b < 1024) return b + 'B'; if (b < 1048576) return (b/1024).toFixed(1) + 'KB'; return (b/1048576).toFixed(1) + 'MB'; }
 function scrollToBottom() { const m = document.getElementById('messages'); requestAnimationFrame(() => { m.scrollTop = m.scrollHeight; }); }
 function handleKey(e) {
-if (settings.sendKey === 'enter') { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
-else { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); sendMessage(); } }
+  if (settings.sendKey === 'enter') { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+  else { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); sendMessage(); } }
 }
 function autoResize(el) { el.style.height = '24px'; el.style.height = Math.min(el.scrollHeight, 200) + 'px'; }
 function openLightbox(src) { document.getElementById('lightbox-img').src = src; document.getElementById('lightbox').classList.add('open'); }
@@ -1792,222 +1805,22 @@ function toggleMembers() { document.getElementById('members-panel').classList.to
 function closeDrawers() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('members-panel').classList.remove('open'); document.getElementById('drawer-overlay').classList.remove('open'); }
 
 function initMobile() {
-const isMobile = window.matchMedia('(max-width:640px)').matches;
-if (!isMobile) return;
-document.getElementById('msg-input').addEventListener('focus', () => setTimeout(scrollToBottom, 350));
-let tx = 0, ty = 0;
-document.addEventListener('touchstart', e => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive: true });
-document.addEventListener('touchend', e => {
-const dx = e.changedTouches[0].clientX - tx;
-const dy = Math.abs(e.changedTouches[0].clientY - ty);
-if (dx > 60 && dy < 60 && tx < 30) toggleSidebar();
-else if (dx < -60 && dy < 60) closeDrawers();
-}, { passive: true });
-}
-
-
-// ════ OGP Preview ════
-const _ogpFetched = new Set();
-function fetchAndRenderOgp(msgEl, url) {
-  if (_ogpFetched.has(url)) return;
-  _ogpFetched.add(url);
-  fetch('/api/ogp?url=' + encodeURIComponent(url), { headers: { 'Authorization': 'Bearer ' + token } })
-    .then(function(r) { return r.ok ? r.json() : null; })
-    .then(function(ogp) {
-      if (!ogp || !ogp.title) return;
-      const card = document.createElement('a');
-      card.href = ogp.url || url;
-      card.target = '_blank';
-      card.rel = 'noopener noreferrer';
-      card.className = 'ogp-card';
-      let imgHtml = ogp.image ? '<img class="ogp-card-img" src="' + escHtml(ogp.image) + '" alt="" onerror="this.style.display=\'none\'" loading="lazy" />' : '';
-      let descHtml = ogp.description ? '<div class="ogp-card-desc">' + escHtml(ogp.description) + '</div>' : '';
-      card.innerHTML = '<div class="ogp-card-accent"></div><div class="ogp-card-body"><div class="ogp-card-site">' + escHtml(ogp.siteName || '') + '</div><div class="ogp-card-title">' + escHtml(ogp.title || '') + '</div>' + descHtml + '</div>' + imgHtml;
-      const body = msgEl.querySelector('.msg-body');
-      if (body) body.appendChild(card);
-    })
-    .catch(function() {});
-}
-
-// ════ Voice Channel (WebRTC) ════
-const VOICE_CHANNELS = [
-  { id: 'voice-general', name: 'General' },
-  { id: 'voice-music', name: 'Music' },
-  { id: 'voice-gaming', name: 'Gaming' }
-];
-const STUN_CONFIG = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] };
-let _voiceChannel = null;
-let _localStream = null;
-let _peers = {};
-let _voiceMuted = false;
-let _voiceStateMap = {};
-
-function renderVoiceChannelList() {
-  const list = document.getElementById('voice-channel-list');
-  if (!list) return;
-  list.innerHTML = VOICE_CHANNELS.map(function(vc) {
-    const users = _voiceStateMap[vc.id] || [];
-    const isActive = _voiceChannel === vc.id;
-    const usersHtml = users.length > 0 ? '<div class="ch-voice-users">' + users.map(function(u) {
-      return '<div class="ch-voice-user"><div class="voice-dot-sm"></div>' + escHtml(u.username) + '</div>';
-    }).join('') + '</div>' : '';
-    return '<div class="ch-voice-item' + (isActive ? ' active-voice' : '') + '" onclick="joinVoiceChannel(\'' + vc.id + '\')">'
-      + '<span>&#128266;</span>'
-      + '<span style="flex:1">' + escHtml(vc.name) + '</span>'
-      + (users.length ? '<span style="font-size:11px;color:var(--green);font-weight:600">' + users.length + '</span>' : '')
-      + '</div>' + usersHtml;
-  }).join('');
-}
-
-async function joinVoiceChannel(roomId) {
-  if (_voiceChannel === roomId) return;
-  if (_voiceChannel) await leaveVoiceChannel();
-  try {
-    _localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-  } catch(e) {
-    alert('マイクへのアクセスが拒否されました。\nブラウザの設定からマイクの許可をしてください。');
-    return;
-  }
-  _voiceChannel = roomId;
-  _voiceMuted = false;
-  const vc = VOICE_CHANNELS.find(function(v) { return v.id === roomId; });
-  document.getElementById('voice-panel-channel').textContent = vc ? '#' + vc.name : roomId;
-  document.getElementById('voice-panel').classList.add('open');
-  const muteBtn = document.getElementById('voice-mute-btn');
-  muteBtn.textContent = String.fromCharCode(127908) + ' ミュート';
-  muteBtn.classList.remove('muted');
-  renderVoiceChannelList();
-  updateVoiceParticipants();
-  socket.emit('voice_join', { roomId: roomId });
-}
-
-async function leaveVoiceChannel() {
-  if (!_voiceChannel) return;
-  const roomId = _voiceChannel;
-  _voiceChannel = null;
-  Object.values(_peers).forEach(function(pc) { pc.close(); });
-  _peers = {};
-  if (_localStream) { _localStream.getTracks().forEach(function(t) { t.stop(); }); _localStream = null; }
-  document.querySelectorAll('.remote-audio').forEach(function(el) { el.remove(); });
-  socket.emit('voice_leave', { roomId: roomId });
-  document.getElementById('voice-panel').classList.remove('open');
-  renderVoiceChannelList();
-  updateVoiceParticipants();
-}
-
-function toggleVoiceMute() {
-  _voiceMuted = !_voiceMuted;
-  if (_localStream) {
-    _localStream.getAudioTracks().forEach(function(t) { t.enabled = !_voiceMuted; });
-  }
-  const btn = document.getElementById('voice-mute-btn');
-  btn.textContent = _voiceMuted ? String.fromCharCode(128263) + ' ミュート中' : String.fromCharCode(127908) + ' ミュート';
-  btn.classList.toggle('muted', _voiceMuted);
-  updateVoiceParticipants();
-}
-
-function updateVoiceParticipants() {
-  const list = document.getElementById('voice-participants-list');
-  if (!list) return;
-  if (!_voiceChannel) { list.innerHTML = ''; return; }
-  const others = _voiceStateMap[_voiceChannel] || [];
-  const allUsers = [{ username: (currentUser && currentUser.username) || '...', isSelf: true }]
-    .concat(others.filter(function(u) { return u.username !== (currentUser && currentUser.username); }));
-  list.innerHTML = allUsers.map(function(u) {
-    return '<div class="voice-participant">'
-      + '<div class="voice-participant-dot"></div>'
-      + '<span>' + escHtml(u.username) + (u.isSelf ? ' (あなた)' : '') + '</span>'
-      + (_voiceMuted && u.isSelf ? ' <span style="color:var(--red);font-size:11px">&#128263;</span>' : '')
-      + '</div>';
-  }).join('');
-}
-
-async function _createPeerConnection(toSocketId, isInitiator) {
-  const pc = new RTCPeerConnection(STUN_CONFIG);
-  _peers[toSocketId] = pc;
-  if (_localStream) {
-    _localStream.getTracks().forEach(function(track) { pc.addTrack(track, _localStream); });
-  }
-  pc.ontrack = function(e) {
-    let audio = document.getElementById('remote-audio-' + toSocketId);
-    if (!audio) {
-      audio = document.createElement('audio');
-      audio.id = 'remote-audio-' + toSocketId;
-      audio.className = 'remote-audio';
-      audio.autoplay = true;
-      document.body.appendChild(audio);
-    }
-    audio.srcObject = e.streams[0];
-  };
-  pc.onicecandidate = function(e) {
-    if (e.candidate) {
-      socket.emit('voice_ice', { toSocketId: toSocketId, candidate: e.candidate });
-    }
-  };
-  pc.onconnectionstatechange = function() {
-    if (['disconnected', 'failed', 'closed'].indexOf(pc.connectionState) >= 0) {
-      pc.close();
-      delete _peers[toSocketId];
-      const el = document.getElementById('remote-audio-' + toSocketId);
-      if (el) el.remove();
-    }
-  };
-  if (isInitiator) {
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    socket.emit('voice_offer', { toSocketId: toSocketId, offer: offer, roomId: _voiceChannel });
-  }
-  return pc;
-}
-
-function initVoiceSocketEvents() {
-  socket.on('voice_peers', async function(data) {
-    for (let i = 0; i < data.peers.length; i++) {
-      await _createPeerConnection(data.peers[i].socketId, true);
-    }
-    updateVoiceParticipants();
-  });
-  socket.on('voice_user_joined', async function(data) {
-    if (data.roomId === _voiceChannel && data.socketId !== socket.id) {
-      await _createPeerConnection(data.socketId, false);
-    }
-    updateVoiceParticipants();
-  });
-  socket.on('voice_user_left', function(data) {
-    if (_peers[data.socketId]) {
-      _peers[data.socketId].close();
-      delete _peers[data.socketId];
-      const el = document.getElementById('remote-audio-' + data.socketId);
-      if (el) el.remove();
-    }
-    updateVoiceParticipants();
-  });
-  socket.on('voice_offer', async function(data) {
-    if (!_voiceChannel) return;
-    const pc = await _createPeerConnection(data.fromSocketId, false);
-    await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
-    const answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
-    socket.emit('voice_answer', { toSocketId: data.fromSocketId, answer: answer });
-  });
-  socket.on('voice_answer', async function(data) {
-    const pc = _peers[data.fromSocketId];
-    if (pc) await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-  });
-  socket.on('voice_ice', async function(data) {
-    const pc = _peers[data.fromSocketId];
-    if (pc) { try { await pc.addIceCandidate(new RTCIceCandidate(data.candidate)); } catch(e) {} }
-  });
-  socket.on('voice_state', function(data) {
-    _voiceStateMap[data.roomId] = data.users;
-    renderVoiceChannelList();
-    updateVoiceParticipants();
-  });
+  const isMobile = window.matchMedia('(max-width:640px)').matches;
+  if (!isMobile) return;
+  document.getElementById('msg-input').addEventListener('focus', () => setTimeout(scrollToBottom, 350));
+  let tx = 0, ty = 0;
+  document.addEventListener('touchstart', e => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive: true });
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - tx;
+    const dy = Math.abs(e.changedTouches[0].clientY - ty);
+    if (dx > 60 && dy < 60 && tx < 30) toggleSidebar();
+    else if (dx < -60 && dy < 60) closeDrawers();
+  }, { passive: true });
 }
 
 // ════ INIT ════
 if (token) {
-fetch(`${API}/api/me`, { headers: { Authorization: `Bearer ${token}` } })
-.then(r => r.ok ? r.json() : null).then(u => { if (u) { currentUser = u; startApp(); } });
+  fetch(`${API}/api/me`, { headers: { Authorization: `Bearer ${token}` } })
+    .then(r => r.ok ? r.json() : null).then(u => { if (u) { currentUser = u; startApp(); } });
 }
 </script>

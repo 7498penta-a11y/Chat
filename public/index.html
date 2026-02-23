@@ -352,6 +352,7 @@ html,body{height:100%;font-family:var(--font-main);font-size:var(--font-size);ba
       </div>
     </div>
   </div>
+
   <div class="chat-area">
     <div class="chat-header">
       <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
@@ -382,6 +383,7 @@ html,body{height:100%;font-family:var(--font-main);font-size:var(--font-size);ba
         <div class="welcome-sub">これはチャンネルの始まりです。</div>
       </div>
     </div>
+
     <div class="typing-bar" id="typing-bar"></div>
     <div class="input-bar" style="position:relative" id="input-bar">
       <div class="emoji-picker" id="emoji-picker">
@@ -480,6 +482,314 @@ html,body{height:100%;font-family:var(--font-main);font-size:var(--font-size);ba
 <input type="file" id="file-input" style="display:none" onchange="handleFileSelect(this.files)" multiple />
 
 <script>
+// ════════════════════════════════ STATE ════════════════════════════════
+let token         = localStorage.getItem('token') || null;
+let currentUser   = null;
+let socket        = null;
+let currentChannel = 'general';
+let currentChannelType = 'text'; // 'text' | 'voice' | 'dm'
+let currentDmRoom = null;
+let typingTimer   = null;
+let typingUsers   = {};
+let allMessages   = {};   // { channelId: [msg,...] }
+let unreadCounts  = {};   // { channelId: number }
+let lastSeenTs    = JSON.parse(localStorage.getItem('lastSeenTs') || '{}'); // { channelId: isoString }
+let onlineUsersList = []; // [{ username, userId, voiceChannelId }]
+let isMuted       = false;
+let openDmRooms   = JSON.parse(localStorage.getItem('nexus_dmRooms') || '[]');   // [{ roomId, otherUser }]
+let searchTimer   = null;
+const API         = '';
+
+let settings = { theme:'dark', fontSize:15, sound:true, notif:false, mentionOnly:false, sendKey:'enter',
+  ...JSON.parse(localStorage.getItem('nexus_settings') || '{}') };
+
+// ════════════════════════════════ EMOJI ════════════════════════════════
+const EMOJI_DATA = {
+  '😊':['😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','🙃','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😝','😜','🤪','🤨','🧐','🤓','😎','🥸','🤩','🥳'],
+  '👍':['👍','👎','👌','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','👇','☝️','👋','🤚','🖐','✋','👏','🙌','🤝','🙏','✍️','💪'],
+  '❤️':['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝'],
+  '🐱':['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🐦','🐤','🦆'],
+  '🍕':['🍕','🍔','🌭','🥪','🌮','🌯','🍜','🍝','🍣','🍱','🍡','🧁','🎂','🍰','🍮','☕','🍵','🧃'],
+  '⚽':['⚽','🏀','🏈','⚾','🎾','🏐','🏒','⛳','🎮','🕹️','🎲','🎯','🎳'],
+};
+const EMOJI_CATS = Object.keys(EMOJI_DATA);
+let activeCat = EMOJI_CATS[0];
+let emojiOpen = false;
+
+function buildEmojiPicker() {
+  document.getElementById('emoji-cats').innerHTML = EMOJI_CATS.map(c =>
+    `<button class="emoji-cat-btn${c===activeCat?' active':''}" onclick="showEmojiCat('${c}')">${c}</button>`).join('');
+  showEmojiCat(activeCat, false);
+}
+function showEmojiCat(cat, updateCats=true) {
+  activeCat = cat;
+  if (updateCats) document.querySelectorAll('.emoji-cat-btn').forEach((b,i)=>b.classList.toggle('active',EMOJI_CATS[i]===cat));
+  document.getElementById('emoji-grid').innerHTML = EMOJI_DATA[cat].map(e =>
+    `<button class="emoji-btn-item" onclick="insertEmoji('${e}')">${e}</button>`).join('');
+}
+function toggleEmojiPicker() { emojiOpen=!emojiOpen; document.getElementById('emoji-picker').classList.toggle('open',emojiOpen); if(emojiOpen) buildEmojiPicker(); }
+function insertEmoji(e) { const i=document.getElementById('msg-input');const p=i.selectionStart;i.value=i.value.slice(0,p)+e+i.value.slice(p);i.selectionStart=i.selectionEnd=p+e.length;i.focus();autoResize(i); }
+document.addEventListener('click',e=>{ if(emojiOpen&&!e.target.closest('#emoji-picker')&&!e.target.closest('.emoji-btn')){emojiOpen=false;document.getElementById('emoji-picker').classList.remove('open');} });
+
+// ════════════════════════════════ SETTINGS ═════════════════════════════
+function saveSettings() { localStorage.setItem('nexus_settings',JSON.stringify(settings)); }
+function applySettings() {
+  document.body.classList.toggle('theme-light',settings.theme==='light');
+  document.getElementById('theme-dark').classList.toggle('active',settings.theme==='dark');
+  document.getElementById('theme-light').classList.toggle('active',settings.theme==='light');
+  document.documentElement.style.setProperty('--font-size',settings.fontSize+'px');
+  document.getElementById('font-slider').value=settings.fontSize;
+  document.getElementById('font-size-label').textContent=settings.fontSize+'px';
+  document.getElementById('toggle-sound').classList.toggle('on',settings.sound);
+  document.getElementById('toggle-notif').classList.toggle('on',settings.notif);
+  document.getElementById('toggle-mention-only').classList.toggle('on',settings.mentionOnly);
+  document.getElementById('send-key-select').value=settings.sendKey;
+}
+function setTheme(t){settings.theme=t;saveSettings();applySettings();}
+function setFontSize(v){settings.fontSize=parseInt(v);saveSettings();applySettings();}
+function toggleSetting(k){settings[k]=!settings[k];saveSettings();applySettings();}
+function setSendKey(v){settings.sendKey=v;saveSettings();}
+function requestNotifPermission(){if(!('Notification'in window))return;Notification.requestPermission().then(p=>{settings.notif=p==='granted';saveSettings();applySettings();});}
+function openSettings(){document.getElementById('settings-username').textContent=currentUser?.username||'—';document.getElementById('settings-role').textContent=currentUser?.role||'member';openModal('settings-modal');}
+
+// ════════════════════════════════ MODALS ═══════════════════════════════
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function closeModalOutside(e,id){if(e.target===document.getElementById(id))closeModal(id);}
+
+// ════════════════════════════════ SEARCH ═══════════════════════════════
+let searchOpen=false;
+function toggleSearch(){
+  searchOpen=!searchOpen;
+  document.getElementById('search-bar').classList.toggle('open',searchOpen);
+  document.getElementById('search-btn').classList.toggle('active',searchOpen);
+  if(searchOpen) document.getElementById('search-input').focus();
+  else { document.getElementById('search-input').value=''; document.getElementById('search-results').classList.remove('open'); }
+}
+function debounceSearch(q) {
+  clearTimeout(searchTimer);
+  if (!q||q.length<2) { document.getElementById('search-results').classList.remove('open'); return; }
+  searchTimer = setTimeout(()=>doSearch(q), 400);
+}
+async function doSearch(q) {
+  const scope = document.getElementById('search-scope').value;
+  const channel = scope==='current' ? currentChannel : '';
+  const url = `${API}/api/search?q=${encodeURIComponent(q)}${channel?'&channel='+channel:''}`;
+  const res = await fetch(url,{headers:{Authorization:`Bearer ${token}`}});
+  const results = await res.json();
+  const el = document.getElementById('search-results');
+  if (!results.length) { el.innerHTML='<div style="color:var(--text-3);padding:8px;font-size:13px">結果なし</div>'; el.classList.add('open'); return; }
+  el.innerHTML = results.map(m=>`
+    <div class="search-result-item" onclick="jumpToMessage('${m.channelId}','${m.id}')">
+      <div class="search-result-author">${escHtml(m.author)} <span class="search-result-meta">#${escHtml(m.channelId)}</span></div>
+      <div class="search-result-content">${escHtml(m.content||'')}</div>
+      <div class="search-result-meta">${new Date(m.timestamp).toLocaleString('ja-JP')}</div>
+    </div>`).join('');
+  el.classList.add('open');
+}
+async function jumpToMessage(channelId, msgId) {
+  document.getElementById('search-results').classList.remove('open');
+  if (channelId !== currentChannel) await joinChannel(channelId);
+  setTimeout(()=>{
+    const el = document.querySelector(`[data-id="${msgId}"]`);
+    if (el) { el.scrollIntoView({behavior:'smooth',block:'center'}); el.style.background='rgba(88,101,242,0.15)'; setTimeout(()=>el.style.background='',1500); }
+  },300);
+}
+
+// ════════════════════════════════ NOTIFICATIONS ════════════════════════
+function playNotifSound(){if(!settings.sound)return;try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const o=ctx.createOscillator();const g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.setValueAtTime(880,ctx.currentTime);o.frequency.exponentialRampToValueAtTime(440,ctx.currentTime+0.1);g.gain.setValueAtTime(0.3,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+0.3);o.start(ctx.currentTime);o.stop(ctx.currentTime+0.3);}catch{}}
+function showBrowserNotif(title,body){if(!settings.notif||Notification.permission!=='granted')return;if(document.hasFocus())return;new Notification(title,{body,icon:'/favicon.ico'});}
+function showToastNotif(author,content,channelId,onClick){
+  const el=document.createElement('div');el.className='toast-notif';
+  el.innerHTML=`<div class="toast-notif-icon">💬</div><div class="toast-notif-body"><div class="toast-notif-title">${escHtml(author)} <span style="color:var(--text-3);font-size:11px">${channelId?'#'+escHtml(channelId):'DM'}</span></div><div class="toast-notif-text">${escHtml((content||'').substring(0,60))}${(content||'').length>60?'…':''}</div></div>`;
+  if(onClick) el.onclick=onClick;
+  document.body.appendChild(el);setTimeout(()=>el.remove(),4000);
+}
+
+// ════════════════════════════════ AUTH ═════════════════════════════════
+function switchTab(tab){document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',(i===0)===(tab==='login')));document.getElementById('login-form').style.display=tab==='login'?'':'none';document.getElementById('register-form').style.display=tab==='register'?'':'none';hideError();}
+function showError(msg){const e=document.getElementById('auth-error');e.textContent=msg;e.classList.add('show');}
+function hideError(){document.getElementById('auth-error').classList.remove('show');}
+async function login(){const username=document.getElementById('login-username').value.trim();const password=document.getElementById('login-password').value;if(!username||!password)return showError('ユーザー名とパスワードを入力してください');try{const res=await fetch(`${API}/api/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});const data=await res.json();if(!res.ok)return showError(data.error||'ログイン失敗');onLogin(data);}catch{showError('サーバーに接続できません');}}
+async function register(){const username=document.getElementById('reg-username').value.trim();const password=document.getElementById('reg-password').value;if(!username||!password)return showError('ユーザー名とパスワードを入力してください');if(password.length<6)return showError('パスワードは6文字以上');try{const res=await fetch(`${API}/api/register`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});const data=await res.json();if(!res.ok)return showError(data.error||'登録失敗');onLogin(data);}catch{showError('サーバーに接続できません');}}
+function onLogin({token:t,user}){token=t;currentUser=user;localStorage.setItem('token',t);document.getElementById('auth-screen').style.display='none';document.getElementById('app').classList.add('visible');applySettings();initApp();}
+function logout(){if(!confirm('ログアウトしますか？'))return;localStorage.removeItem('token');if(socket)socket.disconnect();location.reload();}
+
+// ════════════════════════════════ APP INIT ═════════════════════════════
+async function initApp() {
+  document.getElementById('user-display-name').textContent = currentUser.username;
+  document.getElementById('user-avatar-img').src = currentUser.avatar;
+  document.getElementById('user-role-tag').textContent = currentUser.role;
+  if (currentUser.role === 'admin') document.getElementById('admin-btn').style.display = '';
+  document.getElementById('settings-username').textContent = currentUser.username;
+  document.getElementById('settings-role').textContent = currentUser.role;
+
+  const res = await fetch(`${API}/api/channels`,{headers:{Authorization:`Bearer ${token}`}});
+  const channels = await res.json();
+  renderChannelList(channels.filter(c=>c.type==='text'));
+
+  // 全メンバー取得（オフライン表示用）
+  fetch(`${API}/api/members`,{headers:{Authorization:`Bearer ${token}`}})
+    .then(r=>r.json()).then(members=>{ window._allMembers=members; renderMembers(onlineUsersList); }).catch(()=>{});
+
+  // 永続化されたDMリストを復元
+  renderDmList();
+
+  socket = io({auth:{token}});
+
+  // 接続・再接続どちらでも join_channel を送る（socket.io v4 では connect が毎回発火）
+  socket.on('connect', () => {
+    if (!socket._hasInitialized) {
+      // 初回接続: 画面を描画してチャンネルに参加
+      socket._hasInitialized = true;
+      joinChannel(currentChannel);
+    } else {
+      // 再接続: 画面は触らず、サーバールームへの再登録だけ行う
+      if (currentChannelType === 'text' && currentChannel) {
+        socket.emit('join_channel', currentChannel);
+      }
+    }
+  });
+
+  socket.on('message', (msg)=>{
+    // システムメッセージはクライアントでも完全無視
+    if (msg.type === 'system') return;
+    if(!allMessages[msg.channelId]) allMessages[msg.channelId]=[];
+    allMessages[msg.channelId].push(msg);
+    if(msg.channelId===currentChannel && currentChannelType==='text'){appendMessage(msg);scrollToBottom();}
+    else if(msg.type!=='system'){unreadCounts[msg.channelId]=(unreadCounts[msg.channelId]||0)+1;updateUnreadBadge(msg.channelId);}
+    const isMention=msg.content&&currentUser&&msg.content.includes('@'+currentUser.username);
+    if(msg.type==='text'&&msg.author!==currentUser?.username){
+      if(!settings.mentionOnly||isMention) playNotifSound();
+      if(isMention){showBrowserNotif(`${msg.author} があなたをメンション`,msg.content);if(msg.channelId!==currentChannel)showToastNotif(msg.author,msg.content,msg.channelId);}
+      else if(!settings.mentionOnly&&msg.channelId!==currentChannel)showToastNotif(msg.author,msg.content,msg.channelId,()=>joinChannel(msg.channelId));
+    }
+  });
+
+  // 編集・削除
+  socket.on('message_edited',({msgId,channelId,content,editedAt})=>{
+    const msg=allMessages[channelId]?.find(m=>m.id===msgId);
+    if(msg){msg.content=content;msg.edited=true;msg.editedAt=editedAt;}
+    const el=document.querySelector(`[data-id="${msgId}"]`);
+    if(el){const c=el.querySelector('.msg-content');if(c){c.innerHTML=mentionify(linkify(markdownify(escHtml(content))));const h=el.querySelector('.msg-header');let edEl=h?.querySelector('.msg-edited');if(!edEl&&h){edEl=document.createElement('span');edEl.className='msg-edited';h.appendChild(edEl);}if(edEl)edEl.textContent='(編集済み)';}}
+  });
+  socket.on('message_deleted',({msgId,channelId})=>{
+    allMessages[channelId]=allMessages[channelId]?.filter(m=>m.id!==msgId)||[];
+    document.querySelector(`[data-id="${msgId}"]`)?.remove();
+  });
+
+  // ピン
+  socket.on('pin_update',({channelId,pins})=>{ allMessages[`pins:${channelId}`]=pins; });
+
+  // リアクション
+  socket.on('reaction_update',({msgId,reactions})=>updateReactions(msgId,reactions));
+
+  // オンラインユーザー
+  socket.on('online_users',(users)=>{ onlineUsersList=users; renderMembers(users); });
+
+  // ボイス状態
+
+  // タイピング
+  socket.on('typing',({username,isTyping})=>{if(isTyping)typingUsers[username]=true;else delete typingUsers[username];renderTyping();});
+
+  // DM
+  socket.on('dm_message',(msg)=>{
+    const roomId=msg.channelId;
+    if(!allMessages[roomId])allMessages[roomId]=[];
+    allMessages[roomId].push(msg);
+    if(currentDmRoom===roomId&&currentChannelType==='dm'){appendMessage(msg);scrollToBottom();}
+    else{const otherUser=roomId.split('__').find(u=>u!==currentUser.username);showToastNotif(msg.author,msg.content,null,()=>openDm(otherUser));if(!openDmRooms.find(r=>r.roomId===roomId)){openDmRooms.push({roomId,otherUser});localStorage.setItem('nexus_dmRooms', JSON.stringify(openDmRooms));renderDmList();}}
+    playNotifSound();
+  });
+
+
+  // ロール変更
+  socket.on('role_changed',({role})=>{currentUser.role=role;document.getElementById('user-role-tag').textContent=role;if(role==='admin')document.getElementById('admin-btn').style.display='';});
+  socket.on('user_role_updated',()=>{renderMembers(onlineUsersList);});
+
+  // ファイルドロップ
+  document.addEventListener('dragover',e=>{e.preventDefault();document.getElementById('drop-overlay').classList.add('active');});
+  document.addEventListener('dragleave',e=>{if(!e.relatedTarget)document.getElementById('drop-overlay').classList.remove('active');});
+  document.addEventListener('drop',e=>{e.preventDefault();document.getElementById('drop-overlay').classList.remove('active');handleFileSelect(e.dataTransfer.files);});
+}
+
+// ════════════════════════════════ CHANNELS ═════════════════════════════
+function renderChannelList(channels) {
+  const list = document.getElementById('channel-list');
+  list.innerHTML = channels.map(ch=>`
+    <div class="ch-item${ch.id===currentChannel?' active':''}" id="ch-${ch.id}" onclick="joinChannel('${ch.id}')">
+      <span class="ch-icon">#</span>${escHtml(ch.name)}
+      <span class="unread-badge" id="badge-${ch.id}"></span>
+    </div>`).join('');
+}
+
+
+function updateUnreadBadge(channelId) {
+  const badge=document.getElementById(`badge-${channelId}`);
+  const el=document.getElementById(`ch-${channelId}`);
+  const count=unreadCounts[channelId]||0;
+  if(badge)badge.textContent=count>99?'99+':count;
+  if(el)el.classList.toggle('unread',count>0);
+}
+
+async function joinChannel(channelId, silent = false) {
+  closeDrawers();
+  currentChannelType = 'text';
+  currentDmRoom = null;
+  document.querySelectorAll('.ch-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById(`ch-${channelId}`)?.classList.add('active');
+  currentChannel = channelId;
+  unreadCounts[channelId] = 0;
+  updateUnreadBadge(channelId);
+
+  // silent=true のときはルーム参加だけ（再接続後の再登録用）
+  if (silent) { socket.emit('join_channel', channelId); return; }
+
+  document.getElementById('chat-header-icon').textContent = '#';
+  document.getElementById('chat-header-name').textContent = channelId;
+  document.getElementById('msg-input').placeholder = `#${channelId} にメッセージを送信`;
+  document.getElementById('messages').style.display = '';
+  document.getElementById('input-bar').style.display = '';
+  document.getElementById('pins-btn').style.display = '';
+  document.getElementById('messages').innerHTML = `
+    <div class="welcome-msg">
+      <div class="welcome-icon">#</div>
+      <div class="welcome-title">#${channelId} へようこそ！</div>
+      <div class="welcome-sub">これはチャンネルの始まりです。</div>
+    </div>`;
+
+  socket.emit('join_channel', channelId);
+
+  const res = await fetch(`${API}/api/channels/${channelId}/messages`,{headers:{Authorization:`Bearer ${token}`}});
+  const messages = await res.json();
+  allMessages[channelId] = messages;
+
+  const savedTs = lastSeenTs[channelId];
+  let unreadInserted = false;
+
+  messages.forEach((msg,i)=>{
+    if (!unreadInserted && savedTs && msg.timestamp > savedTs && msg.author !== currentUser?.username && msg.type !== 'system') {
+      insertUnreadDivider();
+      unreadInserted = true;
+    }
+    appendMessage(msg);
+  });
+
+  lastSeenTs[channelId] = new Date().toISOString();
+  localStorage.setItem('lastSeenTs', JSON.stringify(lastSeenTs));
+  scrollToBottom();
+}
+
+function insertUnreadDivider() {
+  const container = document.getElementById('messages');
+  const divider = document.createElement('div');
+  divider.className = 'unread-divider';
+  divider.innerHTML = '<span class="unread-divider-label">ここから未読</span>';
+  container.appendChild(divider);
+}
+
+
+
 // ════════════════════════════════ MESSAGES ═════════════════════════════
 const QUICK_REACTIONS = ['👍','❤️','😂','😮','😢','🎉'];
 

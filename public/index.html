@@ -439,10 +439,38 @@ html,body{height:100%;font-family:var(--font-main);font-size:var(--font-size);ba
         <select class="settings-select" id="send-key-select" onchange="setSendKey(this.value)"><option value="enter">Enter</option><option value="ctrl">Ctrl+Enter</option></select></div>
       </div>
       <div>
+        <div class="settings-section-title">🖼 アバター</div>
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px">
+          <img id="settings-avatar-preview" src="" style="width:64px;height:64px;border-radius:50%;border:2px solid var(--border);object-fit:cover" />
+          <div style="flex:1">
+            <div class="settings-row-label" style="margin-bottom:6px">スタイルを選ぶ</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px" id="avatar-style-btns"></div>
+          </div>
+        </div>
+        <div class="settings-row-label" style="margin-bottom:6px">または画像をアップロード</div>
+        <input type="file" id="avatar-file-input" accept="image/*" style="display:none" onchange="handleAvatarFileSelect(this.files)" />
+        <button class="settings-row" style="cursor:pointer;width:100%;justify-content:center;border:1px dashed var(--border);background:transparent;color:var(--text-2);font-size:13px" onclick="document.getElementById('avatar-file-input').click()">📁 画像ファイルを選択</button>
+        <button class="danger-btn" style="margin-top:8px;background:var(--accent);border-color:var(--accent);color:#fff" onclick="saveAvatar()">✓ アバターを保存</button>
+        <div id="avatar-save-msg" style="font-size:12px;color:var(--green);margin-top:6px;display:none">✓ 保存しました</div>
+      </div>
+      <div>
         <div class="settings-section-title">👤 アカウント</div>
         <div class="settings-row"><div><div class="settings-row-label" id="settings-username">—</div><div class="settings-row-desc" id="settings-role">member</div></div></div>
-        <button class="danger-btn" onclick="logout()">🚪 ログアウト</button>
+        <button class="danger-btn" style="margin-bottom:8px" onclick="logout()">🚪 ログアウト</button>
+        <button class="danger-btn" onclick="openDeleteAccount()">🗑 アカウントを削除</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="delete-account-modal" onclick="closeModalOutside(event,'delete-account-modal')">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header"><div class="modal-title" style="color:var(--red)">⚠ アカウント削除</div><button class="modal-close" onclick="closeModal('delete-account-modal')">✕</button></div>
+    <div class="modal-body">
+      <p style="color:var(--text-2);margin-bottom:16px;line-height:1.6">この操作は取り消せません。アカウントが完全に削除されます。<br>確認のためパスワードを入力してください。</p>
+      <input id="delete-account-pw" type="password" class="search-input" placeholder="パスワード" style="width:100%;margin-bottom:12px;box-sizing:border-box" />
+      <div id="delete-account-err" style="color:var(--red);font-size:13px;margin-bottom:8px;display:none"></div>
+      <button class="danger-btn" onclick="confirmDeleteAccount()">削除する</button>
     </div>
   </div>
 </div>
@@ -550,7 +578,106 @@ function setFontSize(v){settings.fontSize=parseInt(v);saveSettings();applySettin
 function toggleSetting(k){settings[k]=!settings[k];saveSettings();applySettings();}
 function setSendKey(v){settings.sendKey=v;saveSettings();}
 function requestNotifPermission(){if(!('Notification'in window))return;Notification.requestPermission().then(p=>{settings.notif=p==='granted';saveSettings();applySettings();});}
-function openSettings(){document.getElementById('settings-username').textContent=currentUser?.username||'—';document.getElementById('settings-role').textContent=currentUser?.role||'member';openModal('settings-modal');}
+const AVATAR_STYLES = [
+  { key: 'bottts',      label: '🤖 ボット' },
+  { key: 'avataaars',   label: '👤 人物' },
+  { key: 'pixel-art',   label: '🎮 ピクセル' },
+  { key: 'fun-emoji',   label: '😀 絵文字' },
+  { key: 'thumbs',      label: '👍 サムズ' },
+  { key: 'shapes',      label: '🔷 シェイプ' },
+];
+
+let pendingAvatar = null; // 保存前のプレビュー用
+
+function openSettings() {
+  document.getElementById('settings-username').textContent = currentUser?.username || '—';
+  document.getElementById('settings-role').textContent = currentUser?.role || 'member';
+  // アバタープレビュー初期化
+  pendingAvatar = currentUser?.avatar;
+  document.getElementById('settings-avatar-preview').src = pendingAvatar || '';
+  // スタイルボタン生成
+  const container = document.getElementById('avatar-style-btns');
+  container.innerHTML = AVATAR_STYLES.map(s =>
+    `<button onclick="previewAvatarStyle('${s.key}')" style="padding:4px 10px;border:1px solid var(--border);border-radius:20px;background:var(--bg-mid);color:var(--text-2);font-size:12px;cursor:pointer" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='var(--bg-mid)'">${s.label}</button>`
+  ).join('');
+  document.getElementById('avatar-save-msg').style.display = 'none';
+  openModal('settings-modal');
+}
+
+function previewAvatarStyle(style) {
+  const url = `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(currentUser?.username || 'user')}`;
+  pendingAvatar = url;
+  document.getElementById('settings-avatar-preview').src = url;
+}
+
+async function handleAvatarFileSelect(files) {
+  if (!files || !files.length) return;
+  const file = files[0];
+  if (!file.type.startsWith('image/')) { alert('画像ファイルを選択してください'); return; }
+  // アップロード
+  const form = new FormData();
+  form.append('file', file);
+  try {
+    const res = await fetch(`${API}/api/upload`, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form });
+    if (!res.ok) throw new Error('upload failed');
+    const data = await res.json();
+    pendingAvatar = data.url.startsWith('http') ? data.url : `${API}${data.url}`;
+    document.getElementById('settings-avatar-preview').src = pendingAvatar;
+  } catch(e) {
+    alert('アップロードに失敗しました');
+  }
+}
+
+async function saveAvatar() {
+  if (!pendingAvatar || pendingAvatar === currentUser?.avatar) return;
+  try {
+    const res = await fetch(`${API}/api/profile/avatar`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ avatar: pendingAvatar }),
+    });
+    if (!res.ok) throw new Error('failed');
+    currentUser.avatar = pendingAvatar;
+    document.getElementById('user-avatar-img').src = pendingAvatar;
+    document.getElementById('avatar-save-msg').style.display = '';
+    setTimeout(() => document.getElementById('avatar-save-msg').style.display = 'none', 2000);
+  } catch(e) {
+    alert('保存に失敗しました');
+  }
+}
+
+function openDeleteAccount() {
+  document.getElementById('delete-account-pw').value = '';
+  document.getElementById('delete-account-err').style.display = 'none';
+  openModal('delete-account-modal');
+}
+
+async function confirmDeleteAccount() {
+  const pw = document.getElementById('delete-account-pw').value;
+  if (!pw) { showDeleteAccountErr('パスワードを入力してください'); return; }
+  try {
+    const res = await fetch(`${API}/api/account`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showDeleteAccountErr(data.error || '削除に失敗しました'); return; }
+    alert('アカウントを削除しました。');
+    localStorage.removeItem('token');
+    localStorage.removeItem('nexus_dmRooms');
+    if (socket) socket.disconnect();
+    location.reload();
+  } catch(e) {
+    showDeleteAccountErr('エラーが発生しました');
+  }
+}
+
+function showDeleteAccountErr(msg) {
+  const el = document.getElementById('delete-account-err');
+  el.textContent = msg;
+  el.style.display = '';
+}
 
 // ════════════════════════════════ MODALS ═══════════════════════════════
 function openModal(id){document.getElementById(id).classList.add('open');}
@@ -720,6 +847,16 @@ async function initApp() {
   // ロール変更
   socket.on('role_changed',({role})=>{currentUser.role=role;document.getElementById('user-role-tag').textContent=role;if(role==='admin')document.getElementById('admin-btn').style.display='';});
   socket.on('user_role_updated',()=>{renderMembers(onlineUsersList);});
+  socket.on('user_avatar_updated',({username, avatar})=>{
+    // 自分のアバターが他のタブ等から更新された場合
+    if (username === currentUser?.username) { currentUser.avatar = avatar; document.getElementById('user-avatar-img').src = avatar; }
+    // メッセージ一覧のアバターも更新
+    document.querySelectorAll(`.msg`).forEach(el => {
+      const author = el.querySelector('.msg-author')?.textContent;
+      if (author === username) { const img = el.querySelector('.msg-avatar img'); if (img) img.src = avatar; }
+    });
+    renderMembers(onlineUsersList);
+  });
 
   // ファイルドロップ
   document.addEventListener('dragover',e=>{e.preventDefault();document.getElementById('drop-overlay').classList.add('active');});
@@ -858,7 +995,9 @@ function renderMessageToDom(msg) {
   // 最終安全網: 同じIDが既にDOMにあればスキップ
   if (msg.id && document.querySelector(`[data-id="${msg.id}"]`)) return;
 
-  const avatar = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(msg.author)}`;
+  // カスタムアバターがあればそちらを優先
+  const memberData = (window._allMembers || []).find(m => m.username === msg.author);
+  const avatar = memberData?.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(msg.author)}`;
   const time   = new Date(msg.timestamp).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
   const isMention = msg.content && currentUser && msg.content.includes('@'+currentUser.username);
   const isOwn = msg.author === currentUser?.username;

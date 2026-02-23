@@ -250,10 +250,6 @@ function adminOnly(req, res, next) {
 // ── REST ──────────────────────────────────────────────────────────
 app.get('/health', (req, res) => res.json({ status: 'ok', mongo: !!usersCol, discord_bot: !!discordBot }));
 
-  }
-  res.json({ iceServers: servers });
-});
-
 app.post('/api/register', async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) return res.status(400).json({ error: 'Username and password required' });

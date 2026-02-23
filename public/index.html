@@ -443,11 +443,15 @@ html,body{height:100%;font-family:var(--font-main);font-size:var(--font-size);ba
           oninput="autoResize(this);emitTyping()" onkeydown="handleKey(event)"></textarea>
         <button class="send-btn" onclick="sendMessage()">▶</button>
       </div>
+      <div style="font-size:11px;color:var(--text-muted);padding:4px 6px 0;display:flex;gap:12px">
+        <span><kbd style="background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:10px">Shift+Enter</kbd> で改行</span>
+        <span><kbd style="background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:10px">**太字**</kbd> <kbd style="background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:10px">*斜体*</kbd> <kbd style="background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:10px">`コード`</kbd></span>
+      </div>
     </div>
   </div>
 
   <div class="members-panel">
-    <div class="members-header">オンライン — <span id="online-count">0</span>名</div>
+    <div class="members-header">メンバー — <span id="online-count">0</span>名オンライン</div>
     <div id="members-list"></div>
   </div>
 </div>
@@ -541,7 +545,7 @@ let currentVoiceChannel = null;
 let peerConnections = {}; // { socketId: RTCPeerConnection }
 let localStream   = null;
 let isMuted       = false;
-let openDmRooms   = [];   // [{ roomId, otherUser }]
+let openDmRooms   = JSON.parse(localStorage.getItem('nexus_dmRooms') || '[]');   // [{ roomId, otherUser }]
 let searchTimer   = null;
 const API         = '';
 
@@ -674,6 +678,13 @@ async function initApp() {
   renderChannelList(channels.filter(c=>c.type==='text'));
   renderVoiceChannelList(channels.filter(c=>c.type==='voice'));
 
+  // 全メンバー取得（オフライン表示用）
+  fetch(`${API}/api/members`,{headers:{Authorization:`Bearer ${token}`}})
+    .then(r=>r.json()).then(members=>{ window._allMembers=members; renderMembers(onlineUsersList); }).catch(()=>{});
+
+  // 永続化されたDMリストを復元
+  renderDmList();
+
   socket = io({auth:{token}});
   socket.on('connect', ()=>joinChannel(currentChannel));
 
@@ -695,7 +706,7 @@ async function initApp() {
     const msg=allMessages[channelId]?.find(m=>m.id===msgId);
     if(msg){msg.content=content;msg.edited=true;msg.editedAt=editedAt;}
     const el=document.querySelector(`[data-id="${msgId}"]`);
-    if(el){const c=el.querySelector('.msg-content');if(c){c.innerHTML=mentionify(linkify(escHtml(content)));const h=el.querySelector('.msg-header');let edEl=h?.querySelector('.msg-edited');if(!edEl&&h){edEl=document.createElement('span');edEl.className='msg-edited';h.appendChild(edEl);}if(edEl)edEl.textContent='(編集済み)';}}
+    if(el){const c=el.querySelector('.msg-content');if(c){c.innerHTML=mentionify(linkify(markdownify(escHtml(content))));const h=el.querySelector('.msg-header');let edEl=h?.querySelector('.msg-edited');if(!edEl&&h){edEl=document.createElement('span');edEl.className='msg-edited';h.appendChild(edEl);}if(edEl)edEl.textContent='(編集済み)';}}
   });
   socket.on('message_deleted',({msgId,channelId})=>{
     allMessages[channelId]=allMessages[channelId]?.filter(m=>m.id!==msgId)||[];
@@ -723,7 +734,7 @@ async function initApp() {
     if(!allMessages[roomId])allMessages[roomId]=[];
     allMessages[roomId].push(msg);
     if(currentDmRoom===roomId&&currentChannelType==='dm'){appendMessage(msg);scrollToBottom();}
-    else{const otherUser=roomId.split('__').find(u=>u!==currentUser.username);showToastNotif(msg.author,msg.content,null,()=>openDm(otherUser));if(!openDmRooms.find(r=>r.roomId===roomId)){openDmRooms.push({roomId,otherUser});renderDmList();}}
+    else{const otherUser=roomId.split('__').find(u=>u!==currentUser.username);showToastNotif(msg.author,msg.content,null,()=>openDm(otherUser));if(!openDmRooms.find(r=>r.roomId===roomId)){openDmRooms.push({roomId,otherUser});localStorage.setItem('nexus_dmRooms', JSON.stringify(openDmRooms));renderDmList();}}
     playNotifSound();
   });
 
@@ -866,21 +877,24 @@ function updateVoiceView(voiceState) {
   document.getElementById('voice-join-btn').style.display = currentVoiceChannel === currentChannel ? 'none' : '';
 }
 
-function joinVoiceFromView() {
-  socket.emit('join_voice', currentChannel);
+async function joinVoiceFromView() {
   currentVoiceChannel = currentChannel;
   document.getElementById('voice-panel').classList.add('active');
   document.getElementById('voice-panel-channel').textContent = currentChannel.replace('voice-','');
   document.getElementById('voice-join-btn').style.display = 'none';
-  startLocalAudio();
+  // マイクを先に取得してからサーバーに接続
+  await startLocalAudio();
+  socket.emit('join_voice', currentChannel);
 }
 
 async function startLocalAudio() {
   try {
     localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    console.log('✅ マイク取得成功');
   } catch (err) {
-    console.warn('マイクアクセス失敗:', err.message);
+    console.warn('⚠️ マイクアクセス失敗:', err.message);
     localStream = null;
+    showToastNotif('⚠️ マイクエラー', 'マイクへのアクセスが拒否されました。ブラウザの設定を確認してください。', null);
   }
 }
 
@@ -964,7 +978,7 @@ function appendMessage(msg) {
     else
       contentHtml=`<a class="file-attachment" href="${url}" target="_blank" download="${escHtml(filename)}"><div class="file-icon">${fileIcon(mimetype)}</div><div class="file-info"><div class="file-name">${escHtml(filename)}</div><div class="file-size">${formatBytes(size)}</div></div><span style="color:var(--text-3)">⬇</span></a>`;
   } else {
-    contentHtml=`<div class="msg-content">${mentionify(linkify(escHtml(msg.content||'')))}</div>`;
+    contentHtml=`<div class="msg-content">${mentionify(linkify(markdownify(escHtml(msg.content||''))))}</div>`;
   }
 
   const editedHtml = msg.edited ? '<span class="msg-edited">(編集済み)</span>' : '';
@@ -1083,17 +1097,36 @@ function stopTyping(){if(!socket)return;socket.emit('typing',{channelId:currentC
 function renderTyping(){const bar=document.getElementById('typing-bar');const users=Object.keys(typingUsers).filter(u=>u!==currentUser?.username);if(!users.length){bar.innerHTML='';return;}bar.innerHTML=`<div class="typing-dots"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div><span>${escHtml(users.join(', '))} が入力中…</span>`;}
 
 // ════════════════════════════════ MEMBERS ══════════════════════════════
-function renderMembers(users) {
-  document.getElementById('online-count').textContent = users.length;
-  document.getElementById('members-list').innerHTML = users.map(u=>`
+function renderMembers(onlineUsers) {
+  document.getElementById('online-count').textContent = onlineUsers.length;
+  const onlineUsernames = new Set(onlineUsers.map(u=>u.username));
+  const offlineUsers = (window._allMembers||[]).filter(u=>!onlineUsernames.has(u.username));
+
+  let html = '';
+  if (onlineUsers.length > 0) {
+    html += `<div style="padding:8px 16px 4px;font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:0.8px">オンライン — ${onlineUsers.length}</div>`;
+    html += onlineUsers.map(u=>`
     <div class="member-item" onclick="openDm('${escHtml(u.username)}')">
       <div class="member-avatar">
         <img src="https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(u.username)}" alt="${escHtml(u.username)}" />
-        <div class="member-status"></div>
+        <div class="member-status" style="background:var(--green)"></div>
       </div>
       <div class="member-name">${escHtml(u.username)}</div>
       ${u.voiceChannelId?'<div class="member-voice">🔊</div>':''}
     </div>`).join('');
+  }
+  if (offlineUsers.length > 0) {
+    html += `<div style="padding:12px 16px 4px;font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:0.8px">オフライン — ${offlineUsers.length}</div>`;
+    html += offlineUsers.map(u=>`
+    <div class="member-item" style="opacity:0.5" onclick="openDm('${escHtml(u.username)}')">
+      <div class="member-avatar">
+        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(u.username)}" alt="${escHtml(u.username)}" />
+        <div class="member-status" style="background:var(--text-muted)"></div>
+      </div>
+      <div class="member-name">${escHtml(u.username)}</div>
+    </div>`).join('');
+  }
+  document.getElementById('members-list').innerHTML = html;
 }
 
 // ════════════════════════════════ DM ═══════════════════════════════════
@@ -1109,7 +1142,7 @@ async function openDm(otherUser) {
   closeModal('dm-search-modal');
   closeDrawers();
   const roomId = [currentUser.username, otherUser].sort().join('__');
-  if (!openDmRooms.find(r=>r.roomId===roomId)) { openDmRooms.push({roomId,otherUser}); renderDmList(); }
+  if (!openDmRooms.find(r=>r.roomId===roomId)) { openDmRooms.push({roomId,otherUser}); localStorage.setItem('nexus_dmRooms', JSON.stringify(openDmRooms)); renderDmList(); }
   currentChannelType = 'dm';
   currentDmRoom = roomId;
   currentChannel = roomId;
@@ -1194,7 +1227,23 @@ function toggleSidebar(){const s=document.querySelector('.sidebar'),o=document.g
 function toggleMembers(){const p=document.querySelector('.members-panel'),o=document.getElementById('drawer-overlay');const open=p.classList.toggle('open');o.classList.toggle('open',open);}
 function closeDrawers(){document.querySelector('.sidebar')?.classList.remove('open');document.querySelector('.members-panel')?.classList.remove('open');document.getElementById('drawer-overlay')?.classList.remove('open');}
 function escHtml(str){return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function linkify(text){return text.replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" rel="noopener" style="color:var(--accent)">$1</a>');}
+function markdownify(text) {
+  // コードブロック (複数行)
+  text = text.replace(/```([\s\S]*?)```/g, (_, code) =>
+    `<pre style="background:var(--bg-dark);border:1px solid var(--border);border-radius:6px;padding:10px 14px;overflow-x:auto;margin:6px 0;font-family:var(--font-mono);font-size:13px;line-height:1.5;color:var(--text-1);user-select:text">${code.replace(/^\n/,'')}</pre>`);
+  // インラインコード
+  text = text.replace(/`([^`]+)`/g, '<code style="background:var(--bg-dark);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-family:var(--font-mono);font-size:13px">$1</code>');
+  // 太字
+  text = text.replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--text-1)">$1</strong>');
+  // 斜体
+  text = text.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
+  // 取り消し線
+  text = text.replace(/~~(.+?)~~/g, '<del>$1</del>');
+  // 改行 → <br>
+  text = text.replace(/\n/g, '<br>');
+  return text;
+}
+function linkify(text){return text.replace(/(https?:\/\/[^\s<"]+)/g,'<a href="$1" target="_blank" rel="noopener" style="color:var(--accent)">$1</a>');}
 function mentionify(text){return text.replace(/@(\w+)/g,'<span class="mention">@$1</span>');}
 function formatBytes(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(1)+' MB';}
 function fileIcon(m=''){if(m.startsWith('image/'))return'🖼️';if(m.startsWith('video/'))return'🎬';if(m.startsWith('audio/'))return'🎵';if(m.includes('pdf'))return'📄';if(m.match(/zip|rar|7z/))return'📦';return'📁';}

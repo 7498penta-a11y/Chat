@@ -33,14 +33,21 @@ function getDiscordChannelId(appCh) {
 let discordBot = null;
 
 function discordMsgToApp(dMsg, appChannelId) {
-  const isFromBot = discordBot && dMsg.author?.id === discordBot.user?.id;
+  const isOurBot = discordBot && dMsg.author?.id === discordBot.user?.id;
+  const isOtherBot = !isOurBot && dMsg.author?.bot;
   let author, content;
 
-  if (isFromBot) {
+  if (isOurBot) {
+    // 自サイトBotのエコー（ここには来ないはずだがフォールバック）
     const match = dMsg.content?.match(/^\*\*\[(.+?)\]\*\*: ([\s\S]*)$/);
     if (match) { author = match[1]; content = match[2]; }
     else { author = 'Web User'; content = dMsg.content; }
+  } else if (isOtherBot) {
+    // 他のDiscord Bot → 名前に [Bot] を付けて区別
+    author  = `${dMsg.author?.username} [Bot]`;
+    content = dMsg.content;
   } else {
+    // 通常のDiscordユーザー
     author  = `${dMsg.author?.username} [Discord]`;
     content = dMsg.content;
   }
@@ -55,13 +62,13 @@ function discordMsgToApp(dMsg, appChannelId) {
         mimetype: attach.contentType || (isImage ? 'image/png' : 'application/octet-stream'),
         size: attach.size || 0,
       },
-      timestamp: dMsg.createdAt.toISOString(), fromDiscord: !isFromBot,
+      timestamp: dMsg.createdAt.toISOString(), fromDiscord: true,
     };
   }
   return {
     id: dMsg.id, author, content: content || '', channelId: appChannelId,
     type: 'text', fileInfo: null,
-    timestamp: dMsg.createdAt.toISOString(), fromDiscord: !isFromBot,
+    timestamp: dMsg.createdAt.toISOString(), fromDiscord: true,
   };
 }
 
@@ -76,9 +83,7 @@ async function fetchDiscordHistory(appChannelId, limit = 50) {
     const sorted = [...fetched.values()].sort((a, b) => a.createdTimestamp - b.createdTimestamp);
     return sorted
       .filter(m => m.content || m.attachments.size > 0)
-      // ボットが送信したメッセージ（Webからの転送エコー）を除外
-      // 除外しないと ch.messages に UUID と Discord ID の両方で同じ内容が保存され重複する
-      .filter(m => m.author?.id !== discordBot?.user?.id)
+      // 全メッセージを取得（自サイトBotのエコーはdiscordMsgToApp内で元のユーザー名に復元）
       .map(m => discordMsgToApp(m, appChannelId));
   } catch (err) {
     console.error(`[Discord履歴] #${appChannelId} 取得失敗:`, err.message);
@@ -124,8 +129,8 @@ function startDiscordBot() {
   });
 
   bot.on('messageCreate', (message) => {
-    if (message.author.id === bot.user?.id) return; // 自サイト経由のメッセージをスキップ
-    if (message.author.bot) return;
+    if (message.author.id === bot.user?.id) return; // 自サイト経由のエコーはスキップ（重複防止）
+    // 他のBotのメッセージは表示する（message.author.bot でも通す）
 
     const appChannelId = discordToApp[message.channelId];
     if (!appChannelId) return;
@@ -310,7 +315,7 @@ app.get('/api/channels/:id/messages', authMiddleware, async (req, res) => {
       const key = `${m.author}|${m.type}|${m.content || ''}`;
       const ts = new Date(m.timestamp).getTime();
       if (seenContent.has(key)) {
-        if (Math.abs(ts - seenContent.get(key)) < 5000) return false;
+        if (Math.abs(ts - seenContent.get(key)) < 10000) return false;
       }
       seenContent.set(key, ts);
       return true;

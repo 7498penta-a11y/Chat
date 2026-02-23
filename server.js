@@ -11,44 +11,47 @@ const fs      = require('fs');
 const cors    = require('cors');
 const { MongoClient } = require('mongodb');
 const { Client, GatewayIntentBits, AttachmentBuilder } = require('discord.js');
-const httpsLib = require('https');
 
 // ── OGP Cache ─────────────────────────────────────────────────────
 const ogpCache = new Map();
 
-function fetchUrlContent(url, maxRedirects = 3) {
-  return new Promise((resolve, reject) => {
+function fetchUrlContent(url, maxRedirects) {
+  maxRedirects = maxRedirects === undefined ? 3 : maxRedirects;
+  return new Promise(function(resolve, reject) {
     const mod = url.startsWith('https') ? require('https') : require('http');
-    const req = mod.get(url, { headers: { 'User-Agent': 'Mozilla/5.0 NexusChatBot/1.0', 'Accept': 'text/html' }, timeout: 5000 }, (res) => {
+    const req = mod.get(url, { headers: { 'User-Agent': 'Mozilla/5.0 NexusChatBot/1.0', 'Accept': 'text/html' }, timeout: 5000 }, function(res) {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location && maxRedirects > 0) {
-        return fetchUrlContent(new URL(res.headers.location, url).toString(), maxRedirects - 1).then(resolve).catch(reject);
+        let loc = res.headers.location;
+        if (!loc.startsWith('http')) { try { loc = new URL(loc, url).toString(); } catch(e) { return reject(e); } }
+        return fetchUrlContent(loc, maxRedirects - 1).then(resolve).catch(reject);
       }
       const chunks = [];
       let size = 0;
-      res.on('data', c => { chunks.push(c); size += c.length; if (size > 150000) res.destroy(); });
-      res.on('end', () => resolve(Buffer.concat(chunks).toString('utf-8', 0, 150000)));
+      res.on('data', function(c) { chunks.push(c); size += c.length; if (size > 150000) res.destroy(); });
+      res.on('end', function() { resolve(Buffer.concat(chunks).toString('utf-8', 0, 150000)); });
       res.on('error', reject);
     });
     req.on('error', reject);
-    req.on('timeout', () => { req.destroy(); reject(new Error('timeout')); });
+    req.on('timeout', function() { req.destroy(); reject(new Error('timeout')); });
   });
 }
 
 function parseOgp(html, originalUrl) {
-  const getMeta = (prop, isName = false) => {
+  function getMeta(prop, isName) {
     const attr = isName ? 'name' : 'property';
-    const patterns = [
-      new RegExp('<meta[\s]+' + attr + '=[\s\"\'](' + prop.replace('.','\\\.') + ')[\s\"\'][^>]+content=[\s\"\']([^\"\'>]+)','i'),
-      new RegExp('<meta[\s]+content=[\s\"\']([^\"\'>]+)[\s\"\'][^>]+' + attr + '=[\s\"\'](' + prop.replace('.','\\\.') + ')[\s\"\'','i'),
+    const regexes = [
+      new RegExp('<meta[\\s]+' + attr + '=[\\s"\']' + prop.replace('.', '\\.') + '[\\s"\'][^>]+content=[\\s"\']([^"\'<>]+)', 'i'),
+      new RegExp('<meta[\\s]+content=[\\s"\']([^"\'<>]+)[\\s"\'][^>]+' + attr + '=[\\s"\']' + prop.replace('.', '\\.') + '[\\s"\']', 'i'),
     ];
-    for (const p of patterns) {
-      const m = html.match(p);
-      if (m) return (m[2] || m[1]).trim();
+    for (const rx of regexes) {
+      const m = html.match(rx);
+      if (m) return m[1].trim();
     }
     return null;
-  };
+  }
   const titleM = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-  const hostname = (() => { try { return new URL(originalUrl).hostname; } catch { return originalUrl; } })();
+  let hostname = originalUrl;
+  try { hostname = new URL(originalUrl).hostname; } catch(e) {}
   return {
     title: getMeta('og:title') || getMeta('twitter:title') || getMeta('title', true) || (titleM ? titleM[1].trim() : null) || hostname,
     description: getMeta('og:description') || getMeta('twitter:description') || getMeta('description', true) || null,
@@ -57,6 +60,17 @@ function parseOgp(html, originalUrl) {
     url: getMeta('og:url') || originalUrl,
   };
 }
+
+// ── Voice Rooms ───────────────────────────────────────────────────
+const voiceRooms = {};
+
+function broadcastVoiceState(roomId) {
+  const users = Object.entries(voiceRooms[roomId] || {}).map(function(entry) {
+    return { socketId: entry[0], username: entry[1] };
+  });
+  io.emit('voice_state', { roomId: roomId, users: users });
+}
+
 
 const app    = express();
 const server = http.createServer(app);
@@ -236,14 +250,6 @@ const userStatus   = {};   // username → 'online'|'away'|'busy'
 const mutedUsers   = new Set();  // username
 const bannedUsers  = new Set();  // username
 const customEmojis = {};   // :name: → url
-// ── Voice Rooms ────────────────────────────────────────────────────
-// voiceRooms: roomId → { socketId: username }
-const voiceRooms = {};
-
-function broadcastVoiceState(roomId) {
-  const users = Object.entries(voiceRooms[roomId] || {}).map(([sid, username]) => ({ socketId: sid, username }));
-  io.emit('voice_state', { roomId, users });
-}
 
 // ── In-memory users ───────────────────────────────────────────────
 const inMemoryUsers = {};
@@ -691,12 +697,13 @@ io.emit('custom_emoji_deleted', { name: req.params.name });
 res.json({ ok: true });
 });
 
-// OGP プレビュー
-app.get('/api/ogp', authMiddleware, async (req, res) => {
-  const { url } = req.query;
+
+// OGP Preview
+app.get('/api/ogp', authMiddleware, async function(req, res) {
+  const url = req.query.url;
   if (!url) return res.status(400).json({ error: 'url required' });
   let parsedUrl;
-  try { parsedUrl = new URL(url); } catch { return res.status(400).json({ error: 'invalid url' }); }
+  try { parsedUrl = new URL(url); } catch(e) { return res.status(400).json({ error: 'invalid url' }); }
   if (!['http:', 'https:'].includes(parsedUrl.protocol)) return res.status(400).json({ error: 'invalid protocol' });
   if (ogpCache.has(url)) {
     const c = ogpCache.get(url);
@@ -708,7 +715,7 @@ app.get('/api/ogp', authMiddleware, async (req, res) => {
     ogp.cachedAt = Date.now();
     ogpCache.set(url, ogp);
     res.json(ogp);
-  } catch (err) {
+  } catch(err) {
     res.status(500).json({ error: 'fetch failed' });
   }
 });
@@ -849,41 +856,6 @@ if (pinsCol) pinsCol.insertOne({ ...pin, channelId }).catch(() => {});
 io.to(channelId).emit('pin_update', { channelId, pins: channels[channelId].pins });
 });
 
-// ── ボイスチャンネル ────────────────────────────────────────────────
-socket.on('voice_join', ({ roomId }) => {
-  if (!voiceRooms[roomId]) voiceRooms[roomId] = {};
-  const existingPeers = Object.entries(voiceRooms[roomId])
-    .filter(([sid]) => sid !== socket.id)
-    .map(([sid, username]) => ({ socketId: sid, username }));
-  voiceRooms[roomId][socket.id] = socket.user.username;
-  socket.join('voice_' + roomId);
-  socket.emit('voice_peers', { roomId, peers: existingPeers });
-  socket.to('voice_' + roomId).emit('voice_user_joined', { roomId, socketId: socket.id, username: socket.user.username });
-  broadcastVoiceState(roomId);
-});
-
-socket.on('voice_leave', ({ roomId }) => {
-  if (voiceRooms[roomId]) {
-    delete voiceRooms[roomId][socket.id];
-    if (!Object.keys(voiceRooms[roomId]).length) delete voiceRooms[roomId];
-  }
-  socket.leave('voice_' + roomId);
-  io.to('voice_' + roomId).emit('voice_user_left', { roomId, socketId: socket.id });
-  broadcastVoiceState(roomId);
-});
-
-socket.on('voice_offer', ({ toSocketId, offer, roomId }) => {
-  io.to(toSocketId).emit('voice_offer', { fromSocketId: socket.id, offer, roomId, username: socket.user.username });
-});
-
-socket.on('voice_answer', ({ toSocketId, answer }) => {
-  io.to(toSocketId).emit('voice_answer', { fromSocketId: socket.id, answer });
-});
-
-socket.on('voice_ice', ({ toSocketId, candidate }) => {
-  io.to(toSocketId).emit('voice_ice', { fromSocketId: socket.id, candidate });
-});
-
 socket.on('unpin_message', async ({ msgId, channelId }) => {
 if (!channels[channelId] || !['admin','moderator'].includes(socket.user.role)) return;
 channels[channelId].pins = (channels[channelId].pins || []).filter(p => p.id !== msgId);
@@ -939,20 +911,59 @@ if (sid) io.to(sid).emit('dm_read_update', { roomId, msgId, readBy: msg.readBy }
 }
 });
 
-socket.on('disconnect', () => {
-delete onlineUsers[socket.id];
-if (socketByUser[socket.user.username] === socket.id) delete socketByUser[socket.user.username];
-// Voice room cleanup
-Object.keys(voiceRooms).forEach(roomId => {
-  if (voiceRooms[roomId] && voiceRooms[roomId][socket.id]) {
-    delete voiceRooms[roomId][socket.id];
-    if (!Object.keys(voiceRooms[roomId]).length) delete voiceRooms[roomId];
-    io.to('voice_' + roomId).emit('voice_user_left', { roomId, socketId: socket.id });
+
+
+  // Voice channel signaling
+  socket.on('voice_join', function(data) {
+    const roomId = data.roomId;
+    if (!voiceRooms[roomId]) voiceRooms[roomId] = {};
+    const existingPeers = Object.entries(voiceRooms[roomId])
+      .filter(function(e) { return e[0] !== socket.id; })
+      .map(function(e) { return { socketId: e[0], username: e[1] }; });
+    voiceRooms[roomId][socket.id] = socket.user.username;
+    socket.join('voice_' + roomId);
+    socket.emit('voice_peers', { roomId: roomId, peers: existingPeers });
+    socket.to('voice_' + roomId).emit('voice_user_joined', { roomId: roomId, socketId: socket.id, username: socket.user.username });
     broadcastVoiceState(roomId);
-  }
-});
-broadcastOnlineUsers();
-});
+  });
+
+  socket.on('voice_leave', function(data) {
+    const roomId = data.roomId;
+    if (voiceRooms[roomId]) {
+      delete voiceRooms[roomId][socket.id];
+      if (!Object.keys(voiceRooms[roomId]).length) delete voiceRooms[roomId];
+    }
+    socket.leave('voice_' + roomId);
+    io.to('voice_' + roomId).emit('voice_user_left', { roomId: roomId, socketId: socket.id });
+    broadcastVoiceState(roomId);
+  });
+
+  socket.on('voice_offer', function(data) {
+    io.to(data.toSocketId).emit('voice_offer', { fromSocketId: socket.id, offer: data.offer, roomId: data.roomId, username: socket.user.username });
+  });
+
+  socket.on('voice_answer', function(data) {
+    io.to(data.toSocketId).emit('voice_answer', { fromSocketId: socket.id, answer: data.answer });
+  });
+
+  socket.on('voice_ice', function(data) {
+    io.to(data.toSocketId).emit('voice_ice', { fromSocketId: socket.id, candidate: data.candidate });
+  });
+
+  socket.on('disconnect', function() {
+    delete onlineUsers[socket.id];
+    if (socketByUser[socket.user.username] === socket.id) delete socketByUser[socket.user.username];
+    // Voice cleanup
+    Object.keys(voiceRooms).forEach(function(roomId) {
+      if (voiceRooms[roomId] && voiceRooms[roomId][socket.id]) {
+        delete voiceRooms[roomId][socket.id];
+        if (!Object.keys(voiceRooms[roomId]).length) delete voiceRooms[roomId];
+        io.to('voice_' + roomId).emit('voice_user_left', { roomId: roomId, socketId: socket.id });
+        broadcastVoiceState(roomId);
+      }
+    });
+    broadcastOnlineUsers();
+  });
 });
 
 function broadcastOnlineUsers() {

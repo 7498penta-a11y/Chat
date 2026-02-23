@@ -739,12 +739,30 @@ io.on('connection', async (socket) => {
 
   // メッセージ編集
   socket.on('edit_message', async ({ msgId, channelId, content }) => {
-    if (!channels[channelId] || !content?.trim()) return;
-    const msg = channels[channelId].messages.find(m => m.id === msgId);
-    if (!msg || (msg.author !== socket.user.username && !['admin','moderator'].includes(socket.user.role))) return;
-    msg.content = content.trim(); msg.edited = true; msg.editedAt = new Date().toISOString();
-    if (messagesCol) messagesCol.updateOne({ id: msgId }, { $set: { content: msg.content, edited: true, editedAt: msg.editedAt } }).catch(() => {});
-    io.to(channelId).emit('message_edited', { msgId, channelId, content: msg.content, editedAt: msg.editedAt });
+    if (!content?.trim()) return;
+    // チャンネルメッセージの編集
+    if (channels[channelId]) {
+      const msg = channels[channelId].messages.find(m => m.id === msgId);
+      if (!msg || (msg.author !== socket.user.username && !['admin','moderator'].includes(socket.user.role))) return;
+      msg.content = content.trim(); msg.edited = true; msg.editedAt = new Date().toISOString();
+      if (messagesCol) messagesCol.updateOne({ id: msgId }, { $set: { content: msg.content, edited: true, editedAt: msg.editedAt } }).catch(() => {});
+      io.to(channelId).emit('message_edited', { msgId, channelId, content: msg.content, editedAt: msg.editedAt });
+      return;
+    }
+    // DMメッセージの編集
+    const dmRoom = dmMessages[channelId];
+    if (dmRoom) {
+      const msg = dmRoom.find(m => m.id === msgId);
+      if (!msg || msg.author !== socket.user.username) return;
+      msg.content = content.trim(); msg.edited = true; msg.editedAt = new Date().toISOString();
+      if (dmsCol) dmsCol.updateOne({ id: msgId }, { $set: { content: msg.content, edited: true, editedAt: msg.editedAt } }).catch(() => {});
+      const [u1, u2] = channelId.split('__');
+      const otherUser = u1 === socket.user.username ? u2 : u1;
+      const otherSid = socketByUser[otherUser];
+      const payload = { msgId, channelId, content: msg.content, editedAt: msg.editedAt };
+      socket.emit('message_edited', payload);
+      if (otherSid) io.to(otherSid).emit('message_edited', payload);
+    }
   });
 
   // メッセージ削除
@@ -779,15 +797,34 @@ io.on('connection', async (socket) => {
 
   // リアクション
   socket.on('add_reaction', ({ msgId, emoji, channelId }) => {
-    if (!channels[channelId]) return;
-    const msg = channels[channelId].messages.find(m => m.id === msgId);
+    let msg = null;
+    let isDm = false;
+
+    if (channels[channelId]) {
+      msg = channels[channelId].messages.find(m => m.id === msgId);
+    } else if (dmMessages[channelId]) {
+      msg = dmMessages[channelId].find(m => m.id === msgId);
+      isDm = true;
+    }
+
     if (!msg) return;
     if (!msg.reactions) msg.reactions = {};
     if (!msg.reactions[emoji]) msg.reactions[emoji] = [];
     const idx = msg.reactions[emoji].indexOf(socket.user.username);
     if (idx === -1) msg.reactions[emoji].push(socket.user.username);
     else { msg.reactions[emoji].splice(idx,1); if (!msg.reactions[emoji].length) delete msg.reactions[emoji]; }
-    io.to(channelId).emit('reaction_update', { msgId, reactions: msg.reactions });
+
+    if (isDm) {
+      // DMリアクションは両ユーザーに直接送信
+      const [u1, u2] = channelId.split('__');
+      const otherUser = u1 === socket.user.username ? u2 : u1;
+      const otherSid = socketByUser[otherUser];
+      const payload = { msgId, reactions: msg.reactions };
+      socket.emit('reaction_update', payload);
+      if (otherSid) io.to(otherSid).emit('reaction_update', payload);
+    } else {
+      io.to(channelId).emit('reaction_update', { msgId, reactions: msg.reactions });
+    }
   });
 
   // タイピング

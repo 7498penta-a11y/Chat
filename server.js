@@ -193,7 +193,7 @@ async function connectMongo() {
 
     // 既存のシステムメッセージをDBから削除（増殖問題の根治）
     const deleted = await messagesCol.deleteMany({ type: 'system' });
-    if (deleted.deletedCount > 0) console.log(`🧹 システムメッセージ ${deleted.deletedCount} 件をDBから削除`);\
+    if (deleted.deletedCount > 0) console.log(`🧹 システムメッセージ ${deleted.deletedCount} 件をDBから削除`);
     console.log('✅ MongoDB connected');
   } catch (err) {
     console.error('❌ MongoDB 接続失敗 → インメモリ続行:', err.message);

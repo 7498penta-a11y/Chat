@@ -654,12 +654,23 @@ async function initApp() {
   socket.on('message', (msg)=>{
     // システムメッセージはクライアントでも完全無視
     if (msg.type === 'system') return;
+
+    // ── このチャンネルがfetchロード中ならバッファに積むだけ（描画しない）──
+    // 描画はjoinChannel完了後に一括で行うため、ここで描画すると二重になる
+    if (channelLoading[msg.channelId]) {
+      if (!pendingSocketMsgs[msg.channelId]) pendingSocketMsgs[msg.channelId] = [];
+      if (!pendingSocketMsgs[msg.channelId].find(m => m.id === msg.id)) {
+        pendingSocketMsgs[msg.channelId].push(msg);
+      }
+      return;
+    }
+
+    // ロード済みチャンネルへのリアルタイムメッセージ
     if(!allMessages[msg.channelId]) allMessages[msg.channelId]=[];
-    // ── allMessagesへの重複プッシュを防ぐ ──
     if (!allMessages[msg.channelId].find(m => m.id === msg.id)) {
       allMessages[msg.channelId].push(msg);
     }
-    if(msg.channelId===currentChannel && currentChannelType==='text'){appendMessage(msg);scrollToBottom();}
+    if(msg.channelId===currentChannel && currentChannelType==='text'){renderMessageToDom(msg);scrollToBottom();}
     else if(msg.type!=='system'){unreadCounts[msg.channelId]=(unreadCounts[msg.channelId]||0)+1;updateUnreadBadge(msg.channelId);}
     const isMention=msg.content&&currentUser&&msg.content.includes('@'+currentUser.username);
     if(msg.type==='text'&&msg.author!==currentUser?.username){
@@ -700,7 +711,7 @@ async function initApp() {
     const roomId=msg.channelId;
     if(!allMessages[roomId])allMessages[roomId]=[];
     allMessages[roomId].push(msg);
-    if(currentDmRoom===roomId&&currentChannelType==='dm'){appendMessage(msg);scrollToBottom();}
+    if(currentDmRoom===roomId&&currentChannelType==='dm'){renderMessageToDom(msg);scrollToBottom();}
     else{const otherUser=roomId.split('__').find(u=>u!==currentUser.username);showToastNotif(msg.author,msg.content,null,()=>openDm(otherUser));if(!openDmRooms.find(r=>r.roomId===roomId)){openDmRooms.push({roomId,otherUser});localStorage.setItem('nexus_dmRooms', JSON.stringify(openDmRooms));renderDmList();}}
     playNotifSound();
   });
@@ -737,6 +748,10 @@ function updateUnreadBadge(channelId) {
 
 // joinChannel が呼ばれるたびにインクリメントし、自分が「最新の呼び出し」か判定する
 const joinGeneration = {};
+// fetch中にsocketで届いたメッセージを一時バッファ（チャンネルごと）
+const pendingSocketMsgs = {};
+// 現在fetchロード中かどうか（チャンネルごと）
+const channelLoading = {};
 
 async function joinChannel(channelId, silent = false) {
   closeDrawers();
@@ -751,9 +766,12 @@ async function joinChannel(channelId, silent = false) {
   // silent=true のときはルーム参加だけ（再接続後の再登録用）
   if (silent) { socket.emit('join_channel', channelId); return; }
 
-  // ── このfetch呼び出しの世代番号を記録 ──
-  // 同じチャンネルへの二重呼び出しでも、古い方は描画をスキップする
+  // ── 世代番号：同チャンネルへの二重呼び出しで古いfetchの描画をブロック ──
   const myGen = (joinGeneration[channelId] = (joinGeneration[channelId] || 0) + 1);
+
+  // ── fetchロード開始：このチャンネルのsocketメッセージをバッファに回す ──
+  channelLoading[channelId] = true;
+  pendingSocketMsgs[channelId] = [];
 
   document.getElementById('chat-header-icon').textContent = '#';
   document.getElementById('chat-header-name').textContent = channelId;
@@ -770,22 +788,32 @@ async function joinChannel(channelId, silent = false) {
 
   socket.emit('join_channel', channelId);
 
-  const res = await fetch(`${API}/api/channels/${channelId}/messages`,{headers:{Authorization:`Bearer ${token}`}});
-  const messages = await res.json();
+  let messages = [];
+  try {
+    const res = await fetch(`${API}/api/channels/${channelId}/messages`,{headers:{Authorization:`Bearer ${token}`}});
+    messages = await res.json();
+  } catch(e) {
+    console.error('[joinChannel] fetch失敗:', e);
+  }
 
-  // ── 別チャンネルへ切り替わっていた、または同チャンネルへの新しい呼び出しがあればスキップ ──
-  if (channelId !== currentChannel || myGen !== joinGeneration[channelId]) return;
+  // ── 別チャンネルへ切り替わった、または新しい呼び出しが来ていたらスキップ ──
+  if (channelId !== currentChannel || myGen !== joinGeneration[channelId]) {
+    channelLoading[channelId] = false;
+    return;
+  }
 
-  // allMessages をサーバー履歴で確定（socket経由で届いた分はIDベースでマージ）
-  const existingSocketMsgs = (allMessages[channelId] || []).filter(
-    m => !messages.find(s => s.id === m.id)
-  );
-  allMessages[channelId] = [...messages, ...existingSocketMsgs]
-    .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+  // ── バッファに溜まったsocketメッセージをサーバー履歴とIDでマージ ──
+  const serverIds = new Set(messages.map(m => m.id));
+  const buffered = (pendingSocketMsgs[channelId] || []).filter(m => !serverIds.has(m.id));
+  const allMsgs = [...messages, ...buffered].sort((a,b) => new Date(a.timestamp)-new Date(b.timestamp));
+
+  // allMessages を確定版で上書き
+  allMessages[channelId] = allMsgs;
 
   const savedTs = lastSeenTs[channelId];
   let unreadInserted = false;
 
+  // ── DOM を確定版で一度だけ描画 ──
   document.getElementById('messages').innerHTML = `
     <div class="welcome-msg">
       <div class="welcome-icon">#</div>
@@ -793,17 +821,21 @@ async function joinChannel(channelId, silent = false) {
       <div class="welcome-sub">これはチャンネルの始まりです。</div>
     </div>`;
 
-  allMessages[channelId].forEach((msg) => {
+  for (const msg of allMsgs) {
     if (!unreadInserted && savedTs && msg.timestamp > savedTs && msg.author !== currentUser?.username && msg.type !== 'system') {
       insertUnreadDivider();
       unreadInserted = true;
     }
-    appendMessage(msg);
-  });
+    renderMessageToDom(msg);
+  }
 
   lastSeenTs[channelId] = new Date().toISOString();
   localStorage.setItem('lastSeenTs', JSON.stringify(lastSeenTs));
   scrollToBottom();
+
+  // ── ロード完了：以降のsocketメッセージは通常通りappend ──
+  channelLoading[channelId] = false;
+  pendingSocketMsgs[channelId] = [];
 }
 
 function insertUnreadDivider() {
@@ -819,14 +851,12 @@ function insertUnreadDivider() {
 // ════════════════════════════════ MESSAGES ═════════════════════════════
 const QUICK_REACTIONS = ['👍','❤️','😂','😮','😢','🎉'];
 
-function appendMessage(msg) {
-  // ── 重複防止: 同じIDのメッセージが既にDOMにあればスキップ ──
-  if (msg.id && document.querySelector(`[data-id="${msg.id}"]`)) return;
-
+// ── メッセージをDOMに追加（重複なし保証はjoinChannel側で行う） ──
+function renderMessageToDom(msg) {
   const container = document.getElementById('messages');
-  if (msg.type === 'system') {
-    const el=document.createElement('div');el.className='msg system';el.textContent=msg.content;container.appendChild(el);return;
-  }
+  if (msg.type === 'system') return; // システムメッセージは表示しない
+  // 最終安全網: 同じIDが既にDOMにあればスキップ
+  if (msg.id && document.querySelector(`[data-id="${msg.id}"]`)) return;
 
   const avatar = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(msg.author)}`;
   const time   = new Date(msg.timestamp).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
@@ -1032,7 +1062,7 @@ async function openDm(otherUser) {
   const res = await fetch(`${API}/api/dm/${roomId}`,{headers:{Authorization:`Bearer ${token}`}});
   const messages = await res.json();
   allMessages[roomId] = messages;
-  messages.forEach(appendMessage);
+  messages.forEach(renderMessageToDom);
   scrollToBottom();
 }
 

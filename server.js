@@ -298,30 +298,26 @@ app.get('/api/channels/:id/messages', authMiddleware, async (req, res) => {
   if (!ch) return res.status(404).json({ error: 'Channel not found' });
   const limit = Math.min(parseInt(req.query.limit) || 50, 100);
 
-  // システムメッセージを除外するフィルター
   const filterSystem = msgs => msgs.filter(m => m.type !== 'system');
 
-  // 最終出力前に ID 重複 + 内容重複（author/content/時刻±5秒）を除去する
+  // ID重複除去（同内容の近似重複も弾く）
   function dedup(msgs) {
     const seenIds = new Set();
-    const seenContent = new Map(); // key: "author|content" → earliest timestamp
+    const seenContent = new Map();
     return msgs.filter(m => {
       if (seenIds.has(m.id)) return false;
       seenIds.add(m.id);
       const key = `${m.author}|${m.type}|${m.content || ''}`;
       const ts = new Date(m.timestamp).getTime();
       if (seenContent.has(key)) {
-        const prev = seenContent.get(key);
-        if (Math.abs(ts - prev) < 5000) return false; // 5秒以内の同内容は重複とみなす
-        // 古い方のタイムスタンプを更新（最新を記録）
-        seenContent.set(key, ts);
-      } else {
-        seenContent.set(key, ts);
+        if (Math.abs(ts - seenContent.get(key)) < 5000) return false;
       }
+      seenContent.set(key, ts);
       return true;
     });
   }
 
+  // ① まずDiscord履歴を取得してch.messagesに同期
   const discordHistory = await fetchDiscordHistory(channelId, limit);
   if (discordHistory && discordHistory.length > 0) {
     const existingIds = new Set(ch.messages.map(m => m.id));
@@ -331,15 +327,21 @@ app.get('/api/channels/:id/messages', authMiddleware, async (req, res) => {
         if (messagesCol) messagesCol.updateOne({ id: msg.id }, { $setOnInsert: msg }, { upsert: true }).catch(() => {});
       }
     }
-    const sorted = [...ch.messages].sort((a,b) => new Date(a.timestamp)-new Date(b.timestamp));
-    return res.json(dedup(filterSystem(sorted)).slice(-limit));
   }
 
+  // ② MongoDBとch.messagesを必ずマージ（Webから送ったメッセージはMongoDBにある）
+  let merged = [...ch.messages];
   if (messagesCol) {
-    const msgs = await messagesCol.find({ channelId, type: { $ne: 'system' } }).sort({ timestamp: 1 }).limit(limit).toArray();
-    if (msgs.length > 0) return res.json(dedup(msgs));
+    const dbMsgs = await messagesCol
+      .find({ channelId, type: { $ne: 'system' } })
+      .sort({ timestamp: 1 }).limit(limit * 2).toArray();
+    const existingIds = new Set(merged.map(m => m.id));
+    for (const m of dbMsgs) {
+      if (!existingIds.has(m.id)) merged.push(m);
+    }
   }
-  const sorted = [...ch.messages].sort((a,b) => new Date(a.timestamp)-new Date(b.timestamp));
+
+  const sorted = merged.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
   res.json(dedup(filterSystem(sorted)).slice(-limit));
 });
 
@@ -415,6 +417,36 @@ app.post('/api/upload', authMiddleware, upload.single('file'), (req, res) => {
     filename: req.file.originalname, url: `/uploads/${req.file.filename}`,
     mimetype: req.file.mimetype, size: req.file.size,
   });
+});
+
+// アバター更新
+app.put('/api/profile/avatar', authMiddleware, async (req, res) => {
+  const { avatar } = req.body;
+  if (!avatar) return res.status(400).json({ error: 'avatar required' });
+  await Users.updateOne({ usernameLower: req.user.username.toLowerCase() }, { $set: { avatar } });
+  // onlineUsersのアバターも更新してブロードキャスト
+  io.emit('user_avatar_updated', { username: req.user.username, avatar });
+  res.json({ ok: true, avatar });
+});
+
+// アカウント削除
+app.delete('/api/account', authMiddleware, async (req, res) => {
+  const { password } = req.body;
+  const user = await Users.findOne({ usernameLower: req.user.username.toLowerCase() });
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  if (!await bcrypt.compare(password, user.passwordHash))
+    return res.status(401).json({ error: 'パスワードが違います' });
+  // adminが自分を消そうとしたら他にadminがいるか確認
+  if (user.role === 'admin') {
+    const allUsers = await Users.find();
+    const otherAdmins = allUsers.filter(u => u.role === 'admin' && u.id !== user.id);
+    if (otherAdmins.length === 0 && allUsers.length > 1)
+      return res.status(400).json({ error: '唯一の管理者は削除できません。先に他のユーザーに管理者権限を付与してください。' });
+  }
+  // メッセージはそのまま残す（著者名はそのまま）
+  if (usersCol) await usersCol.deleteOne({ id: user.id });
+  else delete inMemoryUsers[user.usernameLower];
+  res.json({ ok: true });
 });
 
 // ── Socket.io ─────────────────────────────────────────────────────

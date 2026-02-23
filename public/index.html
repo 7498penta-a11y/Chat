@@ -735,6 +735,9 @@ function updateUnreadBadge(channelId) {
   if(el)el.classList.toggle('unread',count>0);
 }
 
+// joinChannel が呼ばれるたびにインクリメントし、自分が「最新の呼び出し」か判定する
+const joinGeneration = {};
+
 async function joinChannel(channelId, silent = false) {
   closeDrawers();
   currentChannelType = 'text';
@@ -748,14 +751,16 @@ async function joinChannel(channelId, silent = false) {
   // silent=true のときはルーム参加だけ（再接続後の再登録用）
   if (silent) { socket.emit('join_channel', channelId); return; }
 
+  // ── このfetch呼び出しの世代番号を記録 ──
+  // 同じチャンネルへの二重呼び出しでも、古い方は描画をスキップする
+  const myGen = (joinGeneration[channelId] = (joinGeneration[channelId] || 0) + 1);
+
   document.getElementById('chat-header-icon').textContent = '#';
   document.getElementById('chat-header-name').textContent = channelId;
   document.getElementById('msg-input').placeholder = `#${channelId} にメッセージを送信`;
   document.getElementById('messages').style.display = '';
   document.getElementById('input-bar').style.display = '';
   document.getElementById('pins-btn').style.display = '';
-
-  // DOM描画はfetch完了後に行う（競合防止のため先にローディング表示）
   document.getElementById('messages').innerHTML = `
     <div class="welcome-msg">
       <div class="welcome-icon">#</div>
@@ -768,10 +773,10 @@ async function joinChannel(channelId, silent = false) {
   const res = await fetch(`${API}/api/channels/${channelId}/messages`,{headers:{Authorization:`Bearer ${token}`}});
   const messages = await res.json();
 
-  // ── fetchの非同期待機中に別チャンネルへ切り替わっていたら描画しない ──
-  if (channelId !== currentChannel) return;
+  // ── 別チャンネルへ切り替わっていた、または同チャンネルへの新しい呼び出しがあればスキップ ──
+  if (channelId !== currentChannel || myGen !== joinGeneration[channelId]) return;
 
-  // allMessages をサーバー履歴で上書き（socket経由で届いた分はIDでマージ）
+  // allMessages をサーバー履歴で確定（socket経由で届いた分はIDベースでマージ）
   const existingSocketMsgs = (allMessages[channelId] || []).filter(
     m => !messages.find(s => s.id === m.id)
   );
@@ -781,7 +786,6 @@ async function joinChannel(channelId, silent = false) {
   const savedTs = lastSeenTs[channelId];
   let unreadInserted = false;
 
-  // DOMをクリアしてから履歴を描画（fetchが終わったタイミングで確定）
   document.getElementById('messages').innerHTML = `
     <div class="welcome-msg">
       <div class="welcome-icon">#</div>
